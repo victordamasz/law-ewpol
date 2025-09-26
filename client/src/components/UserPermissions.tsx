@@ -53,8 +53,21 @@ import {
   UserCog
 } from "lucide-react";
 
+// Interface para usuário com permissões
+interface UserWithPermissions {
+  id: number;
+  username: string;
+  nomeCompleto: string;
+  email: string;
+  perfil: string;
+  active: boolean;
+  isMaster: boolean;
+  subordinados: number[];
+  supervisores: number[];
+}
+
 // Dados mockados de usuários para permissões
-const mockUsersForPermissions = [
+const mockUsersForPermissions: UserWithPermissions[] = [
   {
     id: 1,
     username: "admin",
@@ -120,11 +133,11 @@ const profileColors = {
 };
 
 export function UserPermissions() {
-  const [users, setUsers] = useState(mockUsersForPermissions);
-  const [filteredUsers, setFilteredUsers] = useState(mockUsersForPermissions);
+  const [users, setUsers] = useState<UserWithPermissions[]>(mockUsersForPermissions);
+  const [filteredUsers, setFilteredUsers] = useState<UserWithPermissions[]>(mockUsersForPermissions);
   const [searchTerm, setSearchTerm] = useState("");
   const [profileFilter, setProfileFilter] = useState("todos");
-  const [selectedUser, setSelectedUser] = useState<typeof mockUsersForPermissions[0] | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserWithPermissions | null>(null);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
   const [selectedSupervisors, setSelectedSupervisors] = useState<number[]>([]);
   const { toast } = useToast();

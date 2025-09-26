@@ -15,12 +15,15 @@ import { DocumentGenerator } from "@/components/DocumentGenerator";
 import { FinancialManagement } from "@/components/FinancialManagement";
 import { FileManager } from "@/components/FileManager";
 import { Settings } from "@/components/Settings";
+import { Login } from "@/components/Login";
+import { UserModule } from "@/components/UserModule";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={DashboardOverview} />
+      <Route path="/login" component={Login} />
       <Route path="/clientes" component={ClientManagement} />
       <Route path="/agenda" component={CalendarView} />
       <Route path="/tarefas" component={KanbanBoard} />
@@ -31,7 +34,7 @@ function Router() {
       <Route path="/documentos" component={DocumentGenerator} />
       <Route path="/financeiro" component={FinancialManagement} />
       <Route path="/arquivos" component={FileManager} />
-      <Route path="/usuarios" component={Settings} />
+      <Route path="/usuarios" component={UserModule} />
       <Route path="/configuracoes" component={Settings} />
       <Route component={NotFound} />
     </Switch>
