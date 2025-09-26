@@ -191,8 +191,8 @@ export function AppSidebar() {
       return (
         <Collapsible key={item.title} open={isSubmenuOpen} onOpenChange={() => toggleSubmenu(item.title)}>
           <SidebarMenuItem>
-            <CollapsibleTrigger className={`w-full flex items-center gap-3 px-3 py-2 text-left text-sm rounded-md transition-colors hover:bg-slate-800 text-white ${
-              isActive(item.url) ? 'bg-slate-700' : ''
+            <CollapsibleTrigger className={`w-full flex items-center gap-3 px-3 py-2 text-left text-sm rounded-md transition-colors hover:bg-sidebar-accent ${
+              isActive(item.url) ? 'bg-sidebar-accent' : ''
             }`}>
               <item.icon className="h-4 w-4" />
               <span>{item.title}</span>
@@ -254,24 +254,24 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className="bg-slate-900 border-slate-700">
-      <SidebarHeader className="p-4 bg-slate-800 border-b border-slate-700">
+    <Sidebar>
+      <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center bg-blue-600 rounded-md">
-            <Scale className="h-4 w-4 text-white" />
+          <div className="flex h-8 w-8 items-center justify-center bg-primary rounded-md">
+            <Scale className="h-4 w-4 text-primary-foreground" />
           </div>
           {!isCollapsed && (
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-white">Sistema Jurídico</span>
-              <span className="text-xs text-slate-400">Advocacia Moderna</span>
+              <span className="text-sm font-semibold text-foreground">Sistema Jurídico</span>
+              <span className="text-xs text-muted-foreground">Advocacia Moderna</span>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="bg-slate-900">
+      <SidebarContent>
         <SidebarGroup>
-          {!isCollapsed && <SidebarGroupLabel className="text-slate-400 text-xs font-semibold uppercase tracking-wide">Principal</SidebarGroupLabel>}
+          {!isCollapsed && <SidebarGroupLabel>Principal</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {mainMenuItems.map(renderMenuItem)}
@@ -280,7 +280,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          {!isCollapsed && <SidebarGroupLabel className="text-slate-400 text-xs font-semibold uppercase tracking-wide">Jurídico</SidebarGroupLabel>}
+          {!isCollapsed && <SidebarGroupLabel>Jurídico</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {legalMenuItems.map(renderMenuItem)}
@@ -289,7 +289,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          {!isCollapsed && <SidebarGroupLabel className="text-slate-400 text-xs font-semibold uppercase tracking-wide">Administração</SidebarGroupLabel>}
+          {!isCollapsed && <SidebarGroupLabel>Administração</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {adminMenuItems.map(renderMenuItem)}
@@ -298,24 +298,24 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 bg-slate-800 border-t border-slate-700">
-        <div className="flex items-center gap-3 p-2 rounded-md bg-slate-700/50">
+      <SidebarFooter className="p-4">
+        <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent/50">
           <Avatar className="h-8 w-8">
             <AvatarImage src="" alt="Usuário" />
-            <AvatarFallback className="bg-blue-600 text-white">
+            <AvatarFallback className="bg-primary text-primary-foreground">
               JS
             </AvatarFallback>
           </Avatar>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">João Silva</p>
-              <p className="text-xs text-slate-400 truncate">Administrador</p>
+              <p className="text-sm font-medium text-foreground truncate">João Silva</p>
+              <p className="text-xs text-muted-foreground truncate">Administrador</p>
             </div>
           )}
           <Tooltip>
             <TooltipTrigger asChild>
               <LogOut 
-                className="h-4 w-4 text-slate-400 hover:text-white cursor-pointer transition-colors" 
+                className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-pointer" 
                 data-testid="button-logout"
                 onClick={() => console.log('Logout clicked')}
               />
