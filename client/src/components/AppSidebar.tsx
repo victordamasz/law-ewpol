@@ -23,11 +23,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { 
   LayoutDashboard, 
   Users, 
@@ -41,8 +36,7 @@ import {
   LogOut,
   Gavel,
   Clock,
-  UserPlus,
-  ChevronRight
+  UserPlus
 } from "lucide-react";
 
 const mainMenuItems = [
@@ -57,11 +51,6 @@ const mainMenuItems = [
     url: "/clientes",
     icon: Users,
     badge: "12",
-    submenu: [
-      { title: "Lista de Clientes", url: "/clientes/lista" },
-      { title: "Novo Cliente", url: "/clientes/novo" },
-      { title: "Relatórios", url: "/clientes/relatorios" },
-    ]
   },
   {
     title: "Agenda",
@@ -83,11 +72,6 @@ const legalMenuItems = [
     url: "/processos",
     icon: Scale,
     badge: "24",
-    submenu: [
-      { title: "Em Andamento", url: "/processos/andamento" },
-      { title: "Finalizados", url: "/processos/finalizados" },
-      { title: "Aguardando", url: "/processos/aguardando" },
-    ]
   },
   {
     title: "Audiências",
@@ -114,22 +98,12 @@ const adminMenuItems = [
     title: "Documentos",
     url: "/documentos",
     icon: FileText,
-    submenu: [
-      { title: "Contratos", url: "/documentos/contratos" },
-      { title: "Petições", url: "/documentos/peticoes" },
-      { title: "Modelos", url: "/documentos/modelos" },
-    ]
   },
   {
     title: "Financeiro", 
     url: "/financeiro",
     icon: DollarSign,
     badge: "2",
-    submenu: [
-      { title: "Contas a Receber", url: "/financeiro/receber" },
-      { title: "Contas a Pagar", url: "/financeiro/pagar" },
-      { title: "Relatórios", url: "/financeiro/relatorios" },
-    ]
   },
   {
     title: "Arquivos",
@@ -157,16 +131,6 @@ export function AppSidebar() {
     return location === url || (url !== "/" && location.startsWith(url));
   };
 
-  const [openSubmenus, setOpenSubmenus] = useState<string[]>([]);
-
-  const toggleSubmenu = (itemTitle: string) => {
-    setOpenSubmenus(prev => 
-      prev.includes(itemTitle) 
-        ? prev.filter(item => item !== itemTitle)
-        : [...prev, itemTitle]
-    );
-  };
-
   const SidebarMenuItemWithTooltip = ({ item, children }: { item: any; children: React.ReactNode }) => {
     if (isCollapsed) {
       return (
@@ -184,48 +148,6 @@ export function AppSidebar() {
   };
 
   const renderMenuItem = (item: any) => {
-    const hasSubmenu = item.submenu && item.submenu.length > 0;
-    const isSubmenuOpen = openSubmenus.includes(item.title);
-
-    if (hasSubmenu && !isCollapsed) {
-      return (
-        <Collapsible key={item.title} open={isSubmenuOpen} onOpenChange={() => toggleSubmenu(item.title)}>
-          <SidebarMenuItem>
-            <CollapsibleTrigger className={`w-full flex items-center gap-3 px-3 py-2 text-left text-sm rounded-md transition-colors hover:bg-sidebar-accent ${
-              isActive(item.url) ? 'bg-sidebar-accent' : ''
-            }`}>
-              <item.icon className="h-4 w-4" />
-              <span>{item.title}</span>
-              {item.badge && (
-                <Badge variant="destructive" className="ml-auto h-5 px-1.5 text-[10px]">
-                  {item.badge}
-                </Badge>
-              )}
-              <ChevronRight className={`ml-auto h-4 w-4 transition-transform ${
-                isSubmenuOpen ? 'rotate-90' : ''
-              }`} />
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <SidebarMenuSub>
-                {item.submenu.map((subItem: any) => (
-                  <SidebarMenuSubItem key={subItem.title}>
-                    <SidebarMenuSubButton 
-                      asChild
-                      className={isActive(subItem.url) ? "bg-sidebar-accent" : ""}
-                    >
-                      <Link href={subItem.url}>
-                        {subItem.title}
-                      </Link>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                ))}
-              </SidebarMenuSub>
-            </CollapsibleContent>
-          </SidebarMenuItem>
-        </Collapsible>
-      );
-    }
-
     return (
       <SidebarMenuItem key={item.title}>
         <SidebarMenuItemWithTooltip item={item}>
