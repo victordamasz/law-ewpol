@@ -11,8 +11,14 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { 
   LayoutDashboard, 
   Users, 
@@ -105,9 +111,27 @@ const adminMenuItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
   
   const isActive = (url: string) => {
     return location === url || (url !== "/" && location.startsWith(url));
+  };
+
+  const SidebarMenuItemWithTooltip = ({ item, children }: { item: any; children: React.ReactNode }) => {
+    if (isCollapsed) {
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {children}
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>{item.title}</p>
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+    return <>{children}</>;
   };
 
   return (
@@ -117,30 +141,34 @@ export function AppSidebar() {
           <div className="flex h-8 w-8 items-center justify-center bg-primary rounded-md">
             <Scale className="h-4 w-4 text-primary-foreground" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-foreground">Sistema Jurídico</span>
-            <span className="text-xs text-muted-foreground">Advocacia Moderna</span>
-          </div>
+          {!isCollapsed && (
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-foreground">Sistema Jurídico</span>
+              <span className="text-xs text-muted-foreground">Advocacia Moderna</span>
+            </div>
+          )}
         </div>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Principal</SidebarGroupLabel>
+          {!isCollapsed && <SidebarGroupLabel>Principal</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    data-testid={`sidebar-${item.title.toLowerCase()}`}
-                    className={isActive(item.url) ? "bg-sidebar-accent" : ""}
-                  >
-                    <Link href={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                  <SidebarMenuItemWithTooltip item={item}>
+                    <SidebarMenuButton 
+                      asChild
+                      data-testid={`sidebar-${item.title.toLowerCase()}`}
+                      className={isActive(item.url) ? "bg-sidebar-accent" : ""}
+                    >
+                      <Link href={item.url}>
+                        <item.icon className="h-4 w-4" />
+                        {!isCollapsed && <span>{item.title}</span>}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItemWithTooltip>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -148,21 +176,23 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Jurídico</SidebarGroupLabel>
+          {!isCollapsed && <SidebarGroupLabel>Jurídico</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {legalMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    data-testid={`sidebar-${item.title.toLowerCase()}`}
-                    className={isActive(item.url) ? "bg-sidebar-accent" : ""}
-                  >
-                    <Link href={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                  <SidebarMenuItemWithTooltip item={item}>
+                    <SidebarMenuButton 
+                      asChild
+                      data-testid={`sidebar-${item.title.toLowerCase()}`}
+                      className={isActive(item.url) ? "bg-sidebar-accent" : ""}
+                    >
+                      <Link href={item.url}>
+                        <item.icon className="h-4 w-4" />
+                        {!isCollapsed && <span>{item.title}</span>}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItemWithTooltip>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -170,21 +200,23 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Administração</SidebarGroupLabel>
+          {!isCollapsed && <SidebarGroupLabel>Administração</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {adminMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    data-testid={`sidebar-${item.title.toLowerCase()}`}
-                    className={isActive(item.url) ? "bg-sidebar-accent" : ""}
-                  >
-                    <Link href={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                  <SidebarMenuItemWithTooltip item={item}>
+                    <SidebarMenuButton 
+                      asChild
+                      data-testid={`sidebar-${item.title.toLowerCase()}`}
+                      className={isActive(item.url) ? "bg-sidebar-accent" : ""}
+                    >
+                      <Link href={item.url}>
+                        <item.icon className="h-4 w-4" />
+                        {!isCollapsed && <span>{item.title}</span>}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItemWithTooltip>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -200,15 +232,26 @@ export function AppSidebar() {
               JD
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">João Silva</p>
-            <p className="text-xs text-muted-foreground truncate">Administrador</p>
-          </div>
-          <LogOut 
-            className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-pointer" 
-            data-testid="button-logout"
-            onClick={() => console.log('Logout clicked')}
-          />
+          {!isCollapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">João Silva</p>
+              <p className="text-xs text-muted-foreground truncate">Administrador</p>
+            </div>
+          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <LogOut 
+                className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-pointer" 
+                data-testid="button-logout"
+                onClick={() => console.log('Logout clicked')}
+              />
+            </TooltipTrigger>
+            {isCollapsed && (
+              <TooltipContent side="right">
+                <p>Sair</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
         </div>
       </SidebarFooter>
     </Sidebar>

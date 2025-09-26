@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/Pagination";
 import { 
   FolderOpen,
   File,
@@ -35,6 +36,8 @@ export function FileManager() {
   const [selectedFilter, setSelectedFilter] = useState("todos");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [currentFolder, setCurrentFolder] = useState("root");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
 
   // Todo: remove mock functionality
   const folders = [
@@ -139,6 +142,20 @@ export function FileManager() {
     
     return matchesSearch && matchesFilter;
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredFiles.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedFiles = filteredFiles.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (items: number) => {
+    setItemsPerPage(items);
+    setCurrentPage(1);
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
@@ -260,7 +277,7 @@ export function FileManager() {
         
         {viewMode === "grid" ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {filteredFiles.map((file) => (
+            {paginatedFiles.map((file) => (
               <Card 
                 key={file.id} 
                 className="hover-elevate"
@@ -348,7 +365,7 @@ export function FileManager() {
           </div>
         ) : (
           <div className="space-y-2">
-            {filteredFiles.map((file) => (
+            {paginatedFiles.map((file) => (
               <Card key={file.id} className="hover-elevate" data-testid={`file-row-${file.id}`}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
@@ -433,7 +450,18 @@ export function FileManager() {
           </div>
         )}
 
-        {filteredFiles.length === 0 && (
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredFiles.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+          onItemsPerPageChange={handleItemsPerPageChange}
+        />
+      </div>
+
+      {filteredFiles.length === 0 && (
           <div className="text-center py-12">
             <File className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground mb-4">Nenhum arquivo encontrado</p>
@@ -445,7 +473,6 @@ export function FileManager() {
             </Button>
           </div>
         )}
-      </div>
     </div>
   );
 }

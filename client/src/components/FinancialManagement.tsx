@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/Pagination";
 import { 
   DollarSign, 
   TrendingUp, 
@@ -14,9 +16,10 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Grid,
+  List
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +30,9 @@ import {
 export function FinancialManagement() {
   const [selectedPeriod, setSelectedPeriod] = useState("mes");
   const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
 
   // Todo: remove mock functionality
   const financialSummary = {
@@ -150,6 +156,20 @@ export function FinancialManagement() {
     transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     transaction.client.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Pagination logic  
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (items: number) => {
+    setItemsPerPage(items);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="space-y-6 p-6">
@@ -297,8 +317,9 @@ export function FinancialManagement() {
             </div>
           </div>
 
-          <div className="space-y-3">
-            {filteredTransactions.map((transaction) => (
+          {viewMode === "list" ? (
+            <div className="space-y-3">
+              {paginatedTransactions.map((transaction) => (
               <Card 
                 key={transaction.id} 
                 className={`hover-elevate ${isOverdue(transaction.dueDate, transaction.status) ? 'border-destructive/20' : ''}`}
@@ -360,9 +381,80 @@ export function FinancialManagement() {
                   )}
                 </CardContent>
               </Card>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {paginatedTransactions.map((transaction) => (
+                <Card 
+                  key={transaction.id} 
+                  className={`hover-elevate ${isOverdue(transaction.dueDate, transaction.status) ? 'border-destructive/20' : ''}`}
+                  data-testid={`transaction-card-${transaction.id}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {getTypeIcon(transaction.type)}
+                          <Badge variant="outline" size="sm">
+                            {transaction.category}
+                          </Badge>
+                        </div>
+                        <Badge className={getStatusColor(transaction.status)} size="sm">
+                          {getStatusIcon(transaction.status)}
+                          <span className="ml-1 capitalize">{transaction.status}</span>
+                        </Badge>
+                      </div>
+                      
+                      <div>
+                        <p className="font-medium text-sm truncate">{transaction.description}</p>
+                        <p className="text-xs text-muted-foreground">Cliente: {transaction.client}</p>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className={`text-lg font-bold ${getTypeColor(transaction.type)}`}>
+                          {transaction.type === 'pagar' ? '-' : '+'}{formatCurrency(transaction.amount)}
+                        </div>
+                        <div className="text-xs text-muted-foreground text-right">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            <span className={isOverdue(transaction.dueDate, transaction.status) ? 'text-destructive font-medium' : ''}>
+                              {formatDate(transaction.dueDate)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {transaction.status !== 'pago' && (
+                        <div className="flex gap-2 pt-2 border-t border-border">
+                          <Button 
+                            size="sm" 
+                            variant="default"
+                            className="flex-1"
+                            data-testid={`button-pay-transaction-${transaction.id}`}
+                            onClick={() => console.log(`Pay transaction ${transaction.id}`)}
+                          >
+                            {transaction.type === 'receber' ? 'Recebido' : 'Pago'}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
+        
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredTransactions.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+          onItemsPerPageChange={handleItemsPerPageChange}
+        />
 
         {/* Revenue by Category */}
         <Card className="hover-elevate">

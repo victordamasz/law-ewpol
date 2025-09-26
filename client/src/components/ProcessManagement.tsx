@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Pagination } from "@/components/Pagination";
 import { 
   Search, 
   Plus, 
@@ -16,7 +17,9 @@ import {
   Clock,
   AlertTriangle,
   CheckCircle,
-  User
+  User,
+  Grid,
+  List
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -28,6 +31,9 @@ import {
 export function ProcessManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("todos");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   // Todo: remove mock functionality
   const mockProcesses = [
@@ -111,6 +117,20 @@ export function ProcessManagement() {
     return matchesSearch && matchesFilter;
   });
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredProcesses.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedProcesses = filteredProcesses.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (items: number) => {
+    setItemsPerPage(items);
+    setCurrentPage(1);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "ativo": return "bg-chart-3/10 text-chart-3";
@@ -165,8 +185,8 @@ export function ProcessManagement() {
         </Button>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Search and Controls */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -177,33 +197,56 @@ export function ProcessManagement() {
             data-testid="input-search-processes"
           />
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" data-testid="button-filter-processes">
-              <Filter className="h-4 w-4 mr-2" />
-              Status: {selectedFilter === "todos" ? "Todos" : selectedFilter}
+        
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" data-testid="button-filter-processes">
+                <Filter className="h-4 w-4 mr-2" />
+                Status: {selectedFilter === "todos" ? "Todos" : selectedFilter}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setSelectedFilter("todos")}>
+                Todos
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedFilter("ativo")}>
+                Ativo
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedFilter("suspenso")}>
+                Suspenso
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedFilter("arquivado")}>
+                Arquivado
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <div className="flex border rounded-md">
+            <Button
+              variant={viewMode === "grid" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("grid")}
+              data-testid="button-grid-view"
+            >
+              <Grid className="h-4 w-4" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => setSelectedFilter("todos")}>
-              Todos
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSelectedFilter("ativo")}>
-              Ativo
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSelectedFilter("suspenso")}>
-              Suspenso
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSelectedFilter("arquivado")}>
-              Arquivado
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+              data-testid="button-list-view"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Processes List */}
-      <div className="space-y-4">
-        {filteredProcesses.map((process) => (
+      {/* Processes Display */}
+      {viewMode === "list" ? (
+        <div className="space-y-4">
+          {paginatedProcesses.map((process) => (
           <Card key={process.id} className="hover-elevate" data-testid={`card-process-${process.id}`}>
             <CardHeader className="pb-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -345,8 +388,88 @@ export function ProcessManagement() {
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {paginatedProcesses.map((process) => (
+            <Card key={process.id} className="hover-elevate" data-testid={`card-process-${process.id}`}>
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-base truncate mb-2">{process.title}</CardTitle>
+                    <p className="text-xs text-muted-foreground font-mono">
+                      {process.number}
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-col gap-1">
+                    <Badge className={getStatusColor(process.status)} size="sm">
+                      {getStatusIcon(process.status)}
+                      <span className="ml-1 capitalize">{process.status}</span>
+                    </Badge>
+                    <Badge className={getPriorityColor(process.priority)} size="sm">
+                      {process.priority}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>{process.client}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">{process.court}</div>
+                  <Badge variant="outline" className={getProcessTypeColor(process.type)} size="sm">
+                    {process.type}
+                  </Badge>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Progresso</span>
+                    <span className="font-medium">{process.progress}%</span>
+                  </div>
+                  <Progress value={process.progress} className="h-2" />
+                </div>
+
+                <div className="flex gap-1 pt-2">
+                  <Button 
+                    size="sm" 
+                    variant="default" 
+                    className="flex-1"
+                    data-testid={`button-view-process-${process.id}`}
+                    onClick={() => console.log(`View process ${process.id}`)}
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    Ver
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    data-testid={`button-edit-process-${process.id}`}
+                    onClick={() => console.log(`Edit process ${process.id}`)}
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredProcesses.length}
+        itemsPerPage={itemsPerPage}
+        onPageChange={handlePageChange}
+        onItemsPerPageChange={handleItemsPerPageChange}
+      />
 
       {filteredProcesses.length === 0 && (
         <div className="text-center py-12">
