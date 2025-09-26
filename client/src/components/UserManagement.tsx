@@ -47,7 +47,8 @@ import {
   Eye, 
   UserCheck,
   UserX,
-  Settings
+  Settings,
+  User
 } from "lucide-react";
 
 // Dados mockados de usuários
