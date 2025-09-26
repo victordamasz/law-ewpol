@@ -50,7 +50,10 @@ import {
   UserCheck,
   UserX,
   Crown,
-  UserCog
+  UserCog,
+  Edit,
+  Save,
+  X
 } from "lucide-react";
 
 // Interface para usuário com permissões
@@ -132,6 +135,29 @@ const profileColors = {
   estagiario: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
 };
 
+// Interface para permissões de módulos
+interface ModulePermissions {
+  modulo: string;
+  ver: boolean;
+  criar: boolean;
+  editar: boolean;
+  excluir: boolean;
+  exportar: boolean;
+}
+
+const defaultModulePermissions: ModulePermissions[] = [
+  { modulo: "Dashboard", ver: true, criar: false, editar: false, excluir: false, exportar: false },
+  { modulo: "Clientes", ver: true, criar: true, editar: true, excluir: false, exportar: true },
+  { modulo: "Processos", ver: true, criar: true, editar: true, excluir: false, exportar: true },
+  { modulo: "Agenda", ver: true, criar: true, editar: true, excluir: true, exportar: false },
+  { modulo: "Tarefas", ver: true, criar: true, editar: true, excluir: true, exportar: false },
+  { modulo: "Documentos", ver: true, criar: true, editar: false, excluir: false, exportar: true },
+  { modulo: "Financeiro", ver: true, criar: false, editar: false, excluir: false, exportar: true },
+  { modulo: "Arquivos", ver: true, criar: true, editar: false, excluir: false, exportar: false },
+  { modulo: "Usuários", ver: false, criar: false, editar: false, excluir: false, exportar: false },
+  { modulo: "Configurações", ver: false, criar: false, editar: false, excluir: false, exportar: false }
+];
+
 export function UserPermissions() {
   const [users, setUsers] = useState<UserWithPermissions[]>(mockUsersForPermissions);
   const [filteredUsers, setFilteredUsers] = useState<UserWithPermissions[]>(mockUsersForPermissions);
@@ -139,7 +165,9 @@ export function UserPermissions() {
   const [profileFilter, setProfileFilter] = useState("todos");
   const [selectedUser, setSelectedUser] = useState<UserWithPermissions | null>(null);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [isEditPermissionsOpen, setIsEditPermissionsOpen] = useState(false);
   const [selectedSupervisors, setSelectedSupervisors] = useState<number[]>([]);
+  const [modulePermissions, setModulePermissions] = useState<ModulePermissions[]>(defaultModulePermissions);
   const { toast } = useToast();
 
   const handleSearch = (value: string) => {
@@ -268,6 +296,38 @@ export function UserPermissions() {
         ? prev.filter(id => id !== supervisorId)
         : [...prev, supervisorId]
     );
+  };
+
+  const handleEditPermissions = (userId: number) => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUser(user);
+      setModulePermissions([...defaultModulePermissions]);
+      setIsEditPermissionsOpen(true);
+    }
+  };
+
+  const handlePermissionChange = (moduleIndex: number, permission: keyof Omit<ModulePermissions, 'modulo'>, value: boolean) => {
+    setModulePermissions(prev => 
+      prev.map((mod, index) => 
+        index === moduleIndex 
+          ? { ...mod, [permission]: value }
+          : mod
+      )
+    );
+  };
+
+  const handleSavePermissions = () => {
+    if (!selectedUser) return;
+
+    toast({
+      title: "Permissões atualizadas",
+      description: `Permissões de ${selectedUser.nomeCompleto} foram atualizadas com sucesso`,
+      variant: "default"
+    });
+
+    setIsEditPermissionsOpen(false);
+    setSelectedUser(null);
   };
 
   return (
@@ -516,6 +576,10 @@ export function UserPermissions() {
                           <Eye className="mr-2 h-4 w-4" />
                           Visualizar
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditPermissions(user.id)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Editar Permissões
+                        </DropdownMenuItem>
                         {!user.isMaster && (
                           <>
                             <DropdownMenuItem 
@@ -605,6 +669,197 @@ export function UserPermissions() {
               Salvar Vínculos
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Edição de Permissões */}
+      <Dialog open={isEditPermissionsOpen} onOpenChange={setIsEditPermissionsOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Editar Permissões
+            </DialogTitle>
+            <DialogDescription>
+              Configurar permissões de acesso para {selectedUser?.nomeCompleto}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedUser && (
+            <div className="space-y-6">
+              {/* Cabeçalho do Usuário */}
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src="" />
+                      <AvatarFallback>
+                        {selectedUser.nomeCompleto.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-lg font-semibold">{selectedUser.nomeCompleto}</h3>
+                      <div className="flex gap-2 mt-1">
+                        <Badge 
+                          className={profileColors[selectedUser.perfil as keyof typeof profileColors]}
+                          variant="secondary"
+                        >
+                          {selectedUser.perfil.charAt(0).toUpperCase() + selectedUser.perfil.slice(1)}
+                        </Badge>
+                        <Badge variant={selectedUser.isMaster ? "default" : "secondary"}>
+                          {selectedUser.isMaster ? "Master" : "Subordinado"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tabela de Permissões */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Permissões por Módulo</CardTitle>
+                  <div className="text-sm text-muted-foreground">
+                    Configure as permissões de acesso para cada módulo do sistema
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[200px]">Módulo</TableHead>
+                        <TableHead className="text-center w-[100px]">Ver</TableHead>
+                        <TableHead className="text-center w-[100px]">Criar</TableHead>
+                        <TableHead className="text-center w-[100px]">Editar</TableHead>
+                        <TableHead className="text-center w-[100px]">Excluir</TableHead>
+                        <TableHead className="text-center w-[100px]">Exportar</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {modulePermissions.map((module, index) => (
+                        <TableRow key={module.modulo}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <Settings className="h-4 w-4 text-muted-foreground" />
+                              {module.modulo}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={module.ver}
+                              onCheckedChange={(checked) => 
+                                handlePermissionChange(index, 'ver', checked as boolean)
+                              }
+                              data-testid={`checkbox-ver-${module.modulo}`}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={module.criar}
+                              onCheckedChange={(checked) => 
+                                handlePermissionChange(index, 'criar', checked as boolean)
+                              }
+                              disabled={!module.ver}
+                              data-testid={`checkbox-criar-${module.modulo}`}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={module.editar}
+                              onCheckedChange={(checked) => 
+                                handlePermissionChange(index, 'editar', checked as boolean)
+                              }
+                              disabled={!module.ver}
+                              data-testid={`checkbox-editar-${module.modulo}`}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={module.excluir}
+                              onCheckedChange={(checked) => 
+                                handlePermissionChange(index, 'excluir', checked as boolean)
+                              }
+                              disabled={!module.ver || !module.editar}
+                              data-testid={`checkbox-excluir-${module.modulo}`}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={module.exportar}
+                              onCheckedChange={(checked) => 
+                                handlePermissionChange(index, 'exportar', checked as boolean)
+                              }
+                              disabled={!module.ver}
+                              data-testid={`checkbox-exportar-${module.modulo}`}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              {/* Resumo das Permissões */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Resumo das Permissões</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {modulePermissions.filter(m => m.ver).length}
+                      </div>
+                      <div className="text-muted-foreground">Podem Ver</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {modulePermissions.filter(m => m.criar).length}
+                      </div>
+                      <div className="text-muted-foreground">Podem Criar</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-yellow-600">
+                        {modulePermissions.filter(m => m.editar).length}
+                      </div>
+                      <div className="text-muted-foreground">Podem Editar</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-red-600">
+                        {modulePermissions.filter(m => m.excluir).length}
+                      </div>
+                      <div className="text-muted-foreground">Podem Excluir</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {modulePermissions.filter(m => m.exportar).length}
+                      </div>
+                      <div className="text-muted-foreground">Podem Exportar</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Ações */}
+              <div className="flex justify-end gap-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsEditPermissionsOpen(false)}
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleSavePermissions}
+                  data-testid="button-save-permissions"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  Salvar Permissões
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

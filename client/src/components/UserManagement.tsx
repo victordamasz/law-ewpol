@@ -26,6 +26,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Pagination } from "@/components/Pagination";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -130,6 +138,8 @@ export function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [profileFilter, setProfileFilter] = useState("todos");
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedUserForView, setSelectedUserForView] = useState<typeof mockUsers[0] | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const { toast } = useToast();
   
   const itemsPerPage = 10;
@@ -185,6 +195,14 @@ export function UserManagement() {
         description: `${user.nomeCompleto} foi removido do sistema`,
         variant: "destructive"
       });
+    }
+  };
+
+  const handleViewUser = (userId: number) => {
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUserForView(user);
+      setIsViewDialogOpen(true);
     }
   };
 
@@ -384,7 +402,7 @@ export function UserManagement() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleViewUser(user.id)}>
                           <Eye className="mr-2 h-4 w-4" />
                           Visualizar
                         </DropdownMenuItem>
@@ -444,6 +462,136 @@ export function UserManagement() {
           />
         </div>
       )}
+
+      {/* Modal de Visualização do Usuário */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Detalhes do Usuário
+            </DialogTitle>
+            <DialogDescription>
+              Informações completas de {selectedUserForView?.nomeCompleto}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedUserForView && (
+            <div className="space-y-6">
+              {/* Cabeçalho com Avatar */}
+              <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={selectedUserForView.imgPerfil || ""} />
+                  <AvatarFallback className="text-lg">
+                    {selectedUserForView.nomeCompleto.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold">{selectedUserForView.nomeCompleto}</h3>
+                  <div className="flex gap-2">
+                    <Badge 
+                      className={profileColors[selectedUserForView.perfil as keyof typeof profileColors]}
+                      variant="secondary"
+                    >
+                      {selectedUserForView.perfil.charAt(0).toUpperCase() + selectedUserForView.perfil.slice(1)}
+                    </Badge>
+                    {selectedUserForView.active ? (
+                      <Badge variant="default" className="bg-green-100 text-green-800">Ativo</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="bg-red-100 text-red-800">Inativo</Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Informações em Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Dados de Acesso */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Dados de Acesso</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <Label className="text-sm font-medium">Username</Label>
+                      <p className="text-sm text-muted-foreground">{selectedUserForView.username}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Email</Label>
+                      <p className="text-sm text-muted-foreground">{selectedUserForView.email}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Último Login</Label>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(selectedUserForView.ultimoLogin).toLocaleString('pt-BR')}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Dados Pessoais */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Dados Pessoais</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <Label className="text-sm font-medium">CPF</Label>
+                      <p className="text-sm text-muted-foreground">{selectedUserForView.cpf}</p>
+                    </div>
+                    {selectedUserForView.numeroOab && (
+                      <>
+                        <div>
+                          <Label className="text-sm font-medium">Número OAB</Label>
+                          <p className="text-sm text-muted-foreground">{selectedUserForView.numeroOab}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium">UF OAB</Label>
+                          <p className="text-sm text-muted-foreground">{selectedUserForView.ufOab}</p>
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Contato */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Contato</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <Label className="text-sm font-medium">WhatsApp</Label>
+                      <p className="text-sm text-muted-foreground">{selectedUserForView.whatsapp}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Estatísticas */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Estatísticas</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <Label className="text-sm font-medium">Processos Ativos</Label>
+                      <Badge variant="outline">15</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <Label className="text-sm font-medium">Clientes</Label>
+                      <Badge variant="outline">8</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <Label className="text-sm font-medium">Audiências</Label>
+                      <Badge variant="outline">3</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
