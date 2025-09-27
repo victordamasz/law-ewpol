@@ -17,6 +17,9 @@ import { FileManager } from "@/components/FileManager";
 import { Settings } from "@/components/Settings";
 import { Login } from "@/components/Login";
 import { UserModule } from "@/components/UserModule";
+import { ClientCreatePage } from "@/pages/ClientCreatePage";
+import { ClientEditPage } from "@/pages/ClientEditPage";
+import { ClientViewPage } from "@/pages/ClientViewPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -24,7 +27,16 @@ function Router() {
     <Switch>
       <Route path="/" component={DashboardOverview} />
       <Route path="/login" component={Login} />
+      
+      {/* Client routes */}
+      <Route path="/clients" component={ClientManagement} />
+      <Route path="/clients/create" component={ClientCreatePage} />
+      <Route path="/clients/:id/edit" component={ClientEditPage} />
+      <Route path="/clients/:id/view" component={ClientViewPage} />
+      
+      {/* Legacy route for backwards compatibility */}
       <Route path="/clientes" component={ClientManagement} />
+      
       <Route path="/agenda" component={CalendarView} />
       <Route path="/tarefas" component={KanbanBoard} />
       <Route path="/processos" component={ProcessManagement} />
