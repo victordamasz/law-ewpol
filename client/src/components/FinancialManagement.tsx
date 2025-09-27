@@ -4,7 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Pagination } from "@/components/Pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   DollarSign, 
   TrendingUp, 
@@ -18,7 +21,12 @@ import {
   AlertTriangle,
   CheckCircle,
   Grid,
-  List
+  List,
+  Receipt,
+  Download,
+  FileBarChart,
+  Wallet,
+  X
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,13 +34,50 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export function FinancialManagement() {
+  const { toast } = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState("mes");
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
+  
+  // Modal states
+  const [showNewTransactionModal, setShowNewTransactionModal] = useState(false);
+  const [showCashManagementModal, setShowCashManagementModal] = useState(false);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [showReportsModal, setShowReportsModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  
+  // Form states
+  const [newTransaction, setNewTransaction] = useState({
+    type: "receber",
+    description: "",
+    client: "",
+    amount: "",
+    dueDate: "",
+    category: "Honorários",
+    notes: ""
+  });
+  
+  const [cashMovement, setCashMovement] = useState({
+    type: "entrada",
+    amount: "",
+    description: "",
+    category: "Operacional",
+    date: new Date().toISOString().split('T')[0]
+  });
 
   // Todo: remove mock functionality
   const financialSummary = {
@@ -171,6 +216,99 @@ export function FinancialManagement() {
     setCurrentPage(1);
   };
 
+  const handleExportReport = (format: string) => {
+    toast({
+      title: "Relatório exportado!",
+      description: `Relatório financeiro exportado como ${format.toUpperCase()}.`,
+    });
+  };
+
+  const handleCreateTransaction = () => {
+    toast({
+      title: "Transação criada!",
+      description: `${newTransaction.type === 'receber' ? 'Receita' : 'Despesa'} de ${formatCurrency(parseFloat(newTransaction.amount))} criada com sucesso.`,
+    });
+    setShowNewTransactionModal(false);
+    setNewTransaction({
+      type: "receber",
+      description: "",
+      client: "",
+      amount: "",
+      dueDate: "",
+      category: "Honorários",
+      notes: ""
+    });
+  };
+  
+  const handleCashMovement = () => {
+    toast({
+      title: "Movimentação registrada!",
+      description: `${cashMovement.type === 'entrada' ? 'Entrada' : 'Saída'} de ${formatCurrency(parseFloat(cashMovement.amount))} registrada no caixa.`,
+    });
+    setShowCashManagementModal(false);
+    setCashMovement({
+      type: "entrada",
+      amount: "",
+      description: "",
+      category: "Operacional",
+      date: new Date().toISOString().split('T')[0]
+    });
+  };
+  
+  const handleDownloadReceipt = () => {
+    toast({
+      title: "Recibo baixado!",
+      description: "O recibo foi gerado e baixado com sucesso.",
+    });
+  };
+  
+  const handlePrintReceipt = () => {
+    const receiptWindow = window.open('', '_blank');
+    if (receiptWindow && selectedTransaction) {
+      receiptWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Recibo - ${selectedTransaction.description}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+            .amount { font-size: 24px; font-weight: bold; color: #2563eb; }
+            .details { margin: 20px 0; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>ESCRITÓRIO JURÍDICO</h1>
+            <p>Recibo de ${selectedTransaction.type === 'receber' ? 'Pagamento' : 'Despesa'}</p>
+          </div>
+          <div class="details">
+            <p><strong>Descrição:</strong> ${selectedTransaction.description}</p>
+            <p><strong>Cliente:</strong> ${selectedTransaction.client}</p>
+            <p><strong>Data:</strong> ${formatDate(selectedTransaction.dueDate)}</p>
+            <p><strong>Categoria:</strong> ${selectedTransaction.category}</p>
+            <div class="amount">
+              <p>Valor: ${formatCurrency(selectedTransaction.amount || 0)}</p>
+            </div>
+          </div>
+          <div class="footer">
+            <p>Recibo gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+          </div>
+        </body>
+        </html>
+      `);
+      receiptWindow.document.close();
+      receiptWindow.print();
+    }
+    
+    toast({
+      title: "Recibo impresso!",
+      description: "O recibo foi enviado para a impressora.",
+    });
+  };
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -179,10 +317,42 @@ export function FinancialManagement() {
           <p className="text-muted-foreground">Controle financeiro e fluxo de caixa</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" data-testid="button-export-financial">
-            Exportar
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" data-testid="button-financial-menu">
+                <FileBarChart className="h-4 w-4 mr-2" />
+                Relatórios
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setShowReportsModal(true)}>
+                <FileBarChart className="h-4 w-4 mr-2" />
+                Ver Relatórios
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportReport('pdf')}>
+                <Download className="h-4 w-4 mr-2" />
+                Exportar PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportReport('excel')}>
+                <Download className="h-4 w-4 mr-2" />
+                Exportar Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Button 
+            variant="outline" 
+            onClick={() => setShowCashManagementModal(true)}
+            data-testid="button-cash-management"
+          >
+            <Wallet className="h-4 w-4 mr-2" />
+            Gestão de Caixa
           </Button>
-          <Button data-testid="button-add-transaction" onClick={() => console.log('Add transaction clicked')}>
+          
+          <Button 
+            onClick={() => setShowNewTransactionModal(true)}
+            data-testid="button-add-transaction"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Nova Transação
           </Button>
@@ -332,7 +502,7 @@ export function FinancialManagement() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <p className="text-sm font-medium truncate">{transaction.description}</p>
-                          <Badge variant="outline" size="sm">
+                          <Badge variant="outline">
                             {transaction.category}
                           </Badge>
                         </div>
@@ -352,7 +522,7 @@ export function FinancialManagement() {
                       <div className={`text-lg font-bold ${getTypeColor(transaction.type)}`}>
                         {transaction.type === 'pagar' ? '-' : '+'}{formatCurrency(transaction.amount)}
                       </div>
-                      <Badge className={getStatusColor(transaction.status)} size="sm">
+                      <Badge className={getStatusColor(transaction.status)}>
                         {getStatusIcon(transaction.status)}
                         <span className="ml-1 capitalize">{transaction.status}</span>
                       </Badge>
@@ -396,11 +566,11 @@ export function FinancialManagement() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {getTypeIcon(transaction.type)}
-                          <Badge variant="outline" size="sm">
+                          <Badge variant="outline">
                             {transaction.category}
                           </Badge>
                         </div>
-                        <Badge className={getStatusColor(transaction.status)} size="sm">
+                        <Badge className={getStatusColor(transaction.status)}>
                           {getStatusIcon(transaction.status)}
                           <span className="ml-1 capitalize">{transaction.status}</span>
                         </Badge>
@@ -486,6 +656,333 @@ export function FinancialManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modals */}
+      {/* New Transaction Modal */}
+      <Dialog open={showNewTransactionModal} onOpenChange={setShowNewTransactionModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nova Transação</DialogTitle>
+            <DialogDescription>
+              Adicione uma nova receita ou despesa ao sistema financeiro.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="type">Tipo de Transação</Label>
+              <Select value={newTransaction.type} onValueChange={(value) => setNewTransaction({...newTransaction, type: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="receber">A Receber</SelectItem>
+                  <SelectItem value="pagar">A Pagar</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição</Label>
+              <Input
+                id="description"
+                value={newTransaction.description}
+                onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})}
+                placeholder="Descrição da transação"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="amount">Valor</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  value={newTransaction.amount}
+                  onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})}
+                  placeholder="0,00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dueDate">Data de Vencimento</Label>
+                <Input
+                  id="dueDate"
+                  type="date"
+                  value={newTransaction.dueDate}
+                  onChange={(e) => setNewTransaction({...newTransaction, dueDate: e.target.value})}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="client">Cliente</Label>
+              <Select value={newTransaction.client} onValueChange={(value) => setNewTransaction({...newTransaction, client: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Maria Silva">Maria Silva</SelectItem>
+                  <SelectItem value="João Costa">João Costa</SelectItem>
+                  <SelectItem value="Ana Ferreira">Ana Ferreira</SelectItem>
+                  <SelectItem value="Carlos Lima">Carlos Lima</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category">Categoria</Label>
+              <Select value={newTransaction.category} onValueChange={(value) => setNewTransaction({...newTransaction, category: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Honorários">Honorários</SelectItem>
+                  <SelectItem value="Consultoria">Consultoria</SelectItem>
+                  <SelectItem value="Acordos">Acordos</SelectItem>
+                  <SelectItem value="Infraestrutura">Infraestrutura</SelectItem>
+                  <SelectItem value="Software">Software</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewTransactionModal(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateTransaction} data-testid="button-create-transaction">
+              Criar Transação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cash Management Modal */}
+      <Dialog open={showCashManagementModal} onOpenChange={setShowCashManagementModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Gestão de Caixa</DialogTitle>
+            <DialogDescription>
+              Registre entradas e saídas do fluxo de caixa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cashType">Tipo de Movimento</Label>
+              <Select value={cashMovement.type} onValueChange={(value) => setCashMovement({...cashMovement, type: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="entrada">Entrada</SelectItem>
+                  <SelectItem value="saida">Saída</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cashAmount">Valor</Label>
+              <Input
+                id="cashAmount"
+                type="number"
+                value={cashMovement.amount}
+                onChange={(e) => setCashMovement({...cashMovement, amount: e.target.value})}
+                placeholder="0,00"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cashDescription">Descrição</Label>
+              <Textarea
+                id="cashDescription"
+                value={cashMovement.description}
+                onChange={(e) => setCashMovement({...cashMovement, description: e.target.value})}
+                placeholder="Descrição da movimentação"
+                className="min-h-20"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="cashCategory">Categoria</Label>
+                <Select value={cashMovement.category} onValueChange={(value) => setCashMovement({...cashMovement, category: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Operacional">Operacional</SelectItem>
+                    <SelectItem value="Investimento">Investimento</SelectItem>
+                    <SelectItem value="Financiamento">Financiamento</SelectItem>
+                    <SelectItem value="Tributário">Tributário</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cashDate">Data</Label>
+                <Input
+                  id="cashDate"
+                  type="date"
+                  value={cashMovement.date}
+                  onChange={(e) => setCashMovement({...cashMovement, date: e.target.value})}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCashManagementModal(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCashMovement} data-testid="button-register-cash">
+              Registrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Receipt Modal */}
+      <Dialog open={showReceiptModal} onOpenChange={setShowReceiptModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Recibo de Pagamento</DialogTitle>
+            <DialogDescription>
+              Visualize e baixe o recibo da transação.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedTransaction && (
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-center">ESCRITÓRIO JURÍDICO</CardTitle>
+                  <p className="text-center text-muted-foreground">
+                    Recibo de {selectedTransaction.type === 'receber' ? 'Pagamento' : 'Despesa'}
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <Label>Descrição:</Label>
+                      <p className="font-medium">{selectedTransaction.description}</p>
+                    </div>
+                    <div>
+                      <Label>Cliente:</Label>
+                      <p className="font-medium">{selectedTransaction.client}</p>
+                    </div>
+                    <div>
+                      <Label>Data:</Label>
+                      <p className="font-medium">{formatDate(selectedTransaction.dueDate)}</p>
+                    </div>
+                    <div>
+                      <Label>Categoria:</Label>
+                      <p className="font-medium">{selectedTransaction.category}</p>
+                    </div>
+                  </div>
+                  <div className="text-center py-4 border-t border-border">
+                    <Label>Valor Total:</Label>
+                    <p className="text-2xl font-bold text-primary">
+                      {formatCurrency(selectedTransaction.amount)}
+                    </p>
+                  </div>
+                  <div className="text-xs text-muted-foreground text-center">
+                    Recibo gerado em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={handlePrintReceipt} data-testid="button-print-receipt">
+              Imprimir
+            </Button>
+            <Button variant="outline" onClick={handleDownloadReceipt} data-testid="button-download-receipt">
+              <Download className="h-4 w-4 mr-2" />
+              Baixar
+            </Button>
+            <Button onClick={() => setShowReceiptModal(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reports Modal */}
+      <Dialog open={showReportsModal} onOpenChange={setShowReportsModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Relatórios Financeiros</DialogTitle>
+            <DialogDescription>
+              Visualize e exporte relatórios financeiros detalhados.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Resumo do Período</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Total de Receitas:</span>
+                    <span className="font-bold text-green-600">{formatCurrency(185420.50)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total de Despesas:</span>
+                    <span className="font-bold text-red-600">{formatCurrency(87350.25)}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2">
+                    <span>Lucro Líquido:</span>
+                    <span className="font-bold text-primary">{formatCurrency(98070.25)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Indicadores</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Margem de Lucro:</span>
+                    <span className="font-bold">52.9%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>ROI:</span>
+                    <span className="font-bold">112.3%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Fluxo de Caixa:</span>
+                    <span className="font-bold text-primary">Positivo</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Análise por Categoria</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {revenueByCategory.map((category) => (
+                    <div key={category.name} className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{category.name}</span>
+                        <span className="text-muted-foreground">
+                          {formatCurrency(category.value)} ({category.percentage}%)
+                        </span>
+                      </div>
+                      <Progress value={category.percentage} className="h-2" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => handleExportReport('pdf')}>
+              <Download className="h-4 w-4 mr-2" />
+              Exportar PDF
+            </Button>
+            <Button variant="outline" onClick={() => handleExportReport('excel')}>
+              <Download className="h-4 w-4 mr-2" />
+              Exportar Excel
+            </Button>
+            <Button onClick={() => setShowReportsModal(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
