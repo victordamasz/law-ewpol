@@ -1,179 +1,273 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { WysiwygEditor } from "@/components/WysiwygEditor";
 import { 
-  ArrowLeft, 
   Save, 
-  X, 
-  FileText,
-  Bold,
-  Italic,
-  Underline,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  List,
-  ListOrdered,
-  Type,
-  Download,
-  Printer,
-  Eye
+  FileText, 
+  ArrowLeft, 
+  Download, 
+  Printer, 
+  Eye,
+  Share2
 } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
 export function DocumentEditorPage() {
+  const [, params] = useRoute("/documents/:id/edit");
   const { toast } = useToast();
-  const [documentData, setDocumentData] = useState({
+  
+  const [document, setDocument] = useState({
+    id: params?.id || "new",
     name: "Novo Documento",
+    content: "<p>Digite aqui o conteúdo do seu documento...</p>",
+    status: "rascunho",
     category: "contratos",
+    lastSaved: new Date().toISOString(),
     clientId: "",
     processId: "",
-    templateId: "",
-    content: "Digite o conteúdo do documento aqui...\n\nEste é um editor WYSIWYG simples onde você pode:\n- Formatar texto\n- Adicionar listas\n- Alinhar parágrafos\n- Definir tamanhos de fonte",
-    status: "rascunho"
+    templateId: ""
   });
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
   const [isPreview, setIsPreview] = useState(false);
-  const [selectedText, setSelectedText] = useState("");
 
-  const handleInputChange = (field: string, value: string) => {
-    setDocumentData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleSave = () => {
-    toast({
-      title: "Documento salvo!",
-      description: `Documento "${documentData.name}" foi salvo com sucesso.`,
-    });
-  };
-
-  const handleFormatText = (format: string) => {
-    const textarea = document.getElementById('content-editor') as HTMLTextAreaElement;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = textarea.value.substring(start, end);
-    
-    if (selectedText) {
-      let formattedText = selectedText;
-      
-      switch (format) {
-        case 'bold':
-          formattedText = `**${selectedText}**`;
-          break;
-        case 'italic':
-          formattedText = `*${selectedText}*`;
-          break;
-        case 'underline':
-          formattedText = `__${selectedText}__`;
-          break;
-        default:
-          break;
-      }
-      
-      const newContent = 
-        textarea.value.substring(0, start) + 
-        formattedText + 
-        textarea.value.substring(end);
-      
-      setDocumentData(prev => ({
+  useEffect(() => {
+    // Simular carregamento de documento existente
+    if (params?.id && params.id !== "new") {
+      setDocument(prev => ({
         ...prev,
-        content: newContent
+        name: "Procuração Ad Judicia - Maria Silva",
+        content: `
+          <h2>PROCURAÇÃO AD JUDICIA</h2>
+          <br>
+          <p>Por este instrumento particular de procuração, <strong>MARIA SILVA SANTOS</strong>, brasileira, casada, portadora do CPF nº 123.456.789-00 e RG nº 12.345.678-9, residente e domiciliada na Rua das Flores, 123, São Paulo/SP, CEP 01234-567, nomeia e constitui como seu bastante procurador o(a) Dr(a). <strong>JOÃO SILVA</strong>, advogado, inscrito na OAB/SP sob o nº 123.456, com escritório na Rua dos Advogados, 456, São Paulo/SP.</p>
+          <br>
+          <p>Outorga-lhe os mais amplos poderes para:</p>
+          <ul>
+            <li>Propor, acompanhar e defender ações judiciais;</li>
+            <li>Receber citações, intimações e notificações;</li>
+            <li>Confessar, reconhecer a procedência do pedido, transigir, desistir;</li>
+            <li>Firmar compromissos, dar e receber quitação;</li>
+            <li>Substabelecer esta procuração, no todo ou em parte;</li>
+            <li>Praticar todos os demais atos necessários ao bom e fiel desempenho do mandato.</li>
+          </ul>
+          <br>
+          <p>Por ser verdade, firma a presente.</p>
+          <br>
+          <p>São Paulo, ${new Date().toLocaleDateString('pt-BR')}.</p>
+          <br>
+          <p style="text-align: center;">
+            _________________________________<br>
+            MARIA SILVA SANTOS<br>
+            Outorgante
+          </p>
+        `,
+        status: "em_revisao",
+        category: "procuracoes",
+        clientId: "1",
+        processId: "1"
       }));
-      
-      toast({
-        title: "Formatação aplicada",
-        description: `Texto formatado como ${format}`,
-      });
-    } else {
-      toast({
-        title: "Selecione o texto",
-        description: "Selecione o texto que deseja formatar",
-        variant: "destructive",
-      });
     }
+  }, [params?.id]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    
+    // Simular salvamento
+    setTimeout(() => {
+      setLastSavedTime(new Date());
+      setIsSaving(false);
+      toast({
+        title: "Documento salvo!",
+        description: "Suas alterações foram salvas com sucesso.",
+      });
+    }, 1000);
   };
 
-  const handleInsertList = (type: 'bullet' | 'numbered') => {
-    const newItem = type === 'bullet' ? '\n• Item da lista' : '\n1. Item da lista';
-    setDocumentData(prev => ({
-      ...prev,
-      content: prev.content + newItem
-    }));
-  };
-
-  const handleExport = (format: 'pdf' | 'word') => {
+  const handleDownload = () => {
+    // Criar blob com o conteúdo HTML
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>${document.name}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+          h1, h2 { color: #333; }
+          p { margin: 10px 0; }
+        </style>
+      </head>
+      <body>
+        ${document.content}
+      </body>
+      </html>
+    `;
+    
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${document.name}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
     toast({
-      title: "Exportando documento",
-      description: `Documento sendo exportado como ${format.toUpperCase()}`,
+      title: "Download iniciado",
+      description: "O documento está sendo baixado.",
     });
   };
 
   const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>${document.name}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+            h1, h2 { color: #333; }
+            p { margin: 10px 0; }
+            @media print {
+              body { margin: 20px; }
+            }
+          </style>
+        </head>
+        <body>
+          ${document.content}
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    }
+    
     toast({
-      title: "Enviando para impressão",
-      description: "Documento enviado para a impressora",
+      title: "Imprimindo documento",
+      description: "O documento foi enviado para impressão.",
     });
+  };
+
+  const handlePreview = () => {
+    setIsPreview(!isPreview);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "rascunho": return "bg-gray-100 text-gray-800";
+      case "em_revisao": return "bg-yellow-100 text-yellow-800";
+      case "finalizado": return "bg-green-100 text-green-800";
+      default: return "bg-secondary text-secondary-foreground";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "rascunho": return "Rascunho";
+      case "em_revisao": return "Em Revisão";
+      case "finalizado": return "Finalizado";
+      default: return status;
+    }
   };
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center gap-4">
-        <Link href="/documents">
-          <Button variant="outline" size="sm" data-testid="button-back">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-        </Link>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <FileText className="h-8 w-8" />
-            Editor de Documentos
-          </h1>
-          <p className="text-muted-foreground">Crie e edite documentos com formatação avançada</p>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link href="/documents">
+            <Button variant="ghost" size="sm" data-testid="button-back">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+          </Link>
+          <div>
+            <div className="flex items-center gap-2">
+              <FileText className="h-6 w-6 text-primary" />
+              <h1 className="text-2xl font-bold">{document.name}</h1>
+              <Badge className={getStatusColor(document.status)}>
+                {getStatusLabel(document.status)}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Editor WYSIWYG - Formatação completa de documentos jurídicos
+            </p>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setIsPreview(!isPreview)}>
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handlePreview}
+            data-testid="button-preview-document"
+          >
             <Eye className="h-4 w-4 mr-2" />
             {isPreview ? "Editar" : "Visualizar"}
           </Button>
-          <Button onClick={handleSave} data-testid="button-save-document">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handlePrint}
+            data-testid="button-print-document"
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            Imprimir
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleDownload}
+            data-testid="button-download-document"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download
+          </Button>
+          <Button 
+            onClick={handleSave}
+            disabled={isSaving}
+            data-testid="button-save-document"
+          >
             <Save className="h-4 w-4 mr-2" />
-            Salvar
+            {isSaving ? "Salvando..." : "Salvar"}
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Configurações do Documento */}
+        {/* Document metadata */}
         <Card>
           <CardHeader>
             <CardTitle>Configurações</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome do Documento</Label>
+              <Label htmlFor="docName">Nome do Documento</Label>
               <Input
-                id="name"
-                value={documentData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="Nome do documento"
+                id="docName"
+                value={document.name}
+                onChange={(e) => setDocument(prev => ({ ...prev, name: e.target.value }))}
                 data-testid="input-document-name"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="category">Categoria</Label>
-              <Select value={documentData.category} onValueChange={(value) => handleInputChange('category', value)}>
+              <Label>Categoria</Label>
+              <Select 
+                value={document.category} 
+                onValueChange={(value) => setDocument(prev => ({ ...prev, category: value }))}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -187,8 +281,12 @@ export function DocumentEditorPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={documentData.status} onValueChange={(value) => handleInputChange('status', value)}>
+              <Label>Status</Label>
+              <Select 
+                value={document.status} 
+                onValueChange={(value) => setDocument(prev => ({ ...prev, status: value }))}
+                data-testid="select-document-status"
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -200,8 +298,11 @@ export function DocumentEditorPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="clientId">Cliente (Opcional)</Label>
-              <Select value={documentData.clientId} onValueChange={(value) => handleInputChange('clientId', value)}>
+              <Label>Cliente (Opcional)</Label>
+              <Select 
+                value={document.clientId} 
+                onValueChange={(value) => setDocument(prev => ({ ...prev, clientId: value }))}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o cliente" />
                 </SelectTrigger>
@@ -214,8 +315,11 @@ export function DocumentEditorPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="processId">Processo (Opcional)</Label>
-              <Select value={documentData.processId} onValueChange={(value) => handleInputChange('processId', value)}>
+              <Label>Processo (Opcional)</Label>
+              <Select 
+                value={document.processId} 
+                onValueChange={(value) => setDocument(prev => ({ ...prev, processId: value }))}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o processo" />
                 </SelectTrigger>
@@ -226,139 +330,52 @@ export function DocumentEditorPage() {
                 </SelectContent>
               </Select>
             </div>
-
+            
             <Separator />
             
-            {/* Ações de Exportação */}
-            <div className="space-y-2">
-              <Label>Exportar</Label>
-              <div className="flex flex-col gap-2">
-                <Button variant="outline" size="sm" onClick={() => handleExport('pdf')}>
-                  <Download className="h-4 w-4 mr-2" />
-                  PDF
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => handleExport('word')}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Word
-                </Button>
-                <Button variant="outline" size="sm" onClick={handlePrint}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Imprimir
-                </Button>
+            {lastSavedTime && (
+              <div className="space-y-2">
+                <Label>Última Modificação</Label>
+                <div className="text-xs text-muted-foreground">
+                  {lastSavedTime.toLocaleString('pt-BR')}
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Editor de Conteúdo */}
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Conteúdo do Documento</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Barra de Ferramentas de Formatação */}
-            {!isPreview && (
-              <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/50">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleFormatText('bold')}
-                  data-testid="button-bold"
-                >
-                  <Bold className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleFormatText('italic')}
-                  data-testid="button-italic"
-                >
-                  <Italic className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleFormatText('underline')}
-                  data-testid="button-underline"
-                >
-                  <Underline className="h-4 w-4" />
-                </Button>
-                
-                <Separator orientation="vertical" className="h-6" />
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleInsertList('bullet')}
-                  data-testid="button-bullet-list"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleInsertList('numbered')}
-                  data-testid="button-numbered-list"
-                >
-                  <ListOrdered className="h-4 w-4" />
-                </Button>
-
-                <Separator orientation="vertical" className="h-6" />
-
-                <Select defaultValue="14">
-                  <SelectTrigger className="w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="12">12pt</SelectItem>
-                    <SelectItem value="14">14pt</SelectItem>
-                    <SelectItem value="16">16pt</SelectItem>
-                    <SelectItem value="18">18pt</SelectItem>
-                    <SelectItem value="20">20pt</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Área de Edição/Visualização */}
-            {isPreview ? (
-              <Card className="min-h-96">
-                <CardContent className="p-6">
+        {/* Editor content */}
+        <div className="lg:col-span-3 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Conteúdo do Documento</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isPreview ? (
+                <div className="min-h-[500px] p-6 border rounded-lg bg-white">
                   <div 
                     className="prose max-w-none"
-                    dangerouslySetInnerHTML={{
-                      __html: documentData.content
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                        .replace(/__(.*?)__/g, '<u>$1</u>')
-                        .replace(/\n/g, '<br>')
-                    }}
+                    dangerouslySetInnerHTML={{ __html: document.content }}
                   />
-                </CardContent>
-              </Card>
-            ) : (
-              <Textarea
-                id="content-editor"
-                value={documentData.content}
-                onChange={(e) => handleInputChange('content', e.target.value)}
-                placeholder="Digite o conteúdo do documento..."
-                className="min-h-96 font-mono text-sm"
-                data-testid="textarea-content"
-              />
-            )}
-
-            {/* Informações de Formatação */}
-            {!isPreview && (
-              <div className="text-xs text-muted-foreground p-2 bg-muted/20 rounded">
-                <p><strong>Dicas de formatação:</strong></p>
-                <p>• **texto** para negrito</p>
-                <p>• *texto* para itálico</p>
-                <p>• __texto__ para sublinhado</p>
-                <p>• Selecione o texto e use os botões da barra de ferramentas</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+              ) : (
+                <WysiwygEditor
+                  content={document.content}
+                  onChange={(content) => setDocument(prev => ({ ...prev, content }))}
+                  placeholder="Digite o conteúdo do documento..."
+                  className="min-h-[500px]"
+                />
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Auto-save indicator */}
+          {lastSavedTime && (
+            <div className="text-xs text-muted-foreground text-center">
+              Última alteração salva: {lastSavedTime.toLocaleString('pt-BR')}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

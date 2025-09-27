@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
+import { Pagination } from "@/components/Pagination";
 import { 
   Search, 
   Plus, 
@@ -15,7 +17,13 @@ import {
   Clock,
   MapPin,
   MoreHorizontal,
-  Trash2
+  Trash2,
+  User,
+  Grid,
+  List,
+  CheckCircle,
+  XCircle,
+  AlertTriangle
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -53,6 +61,9 @@ export function AudienciaManagement() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("todos");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const [showNewModal, setShowNewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingAudiencia, setEditingAudiencia] = useState<Audiencia | null>(null);
@@ -240,6 +251,24 @@ export function AudienciaManagement() {
     return matchesSearch && matchesFilter;
   });
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAudiencias.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedAudiencias = filteredAudiencias.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (items: number) => {
+    setItemsPerPage(items);
+    setCurrentPage(1);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "agendada": return "bg-blue-100 text-blue-800";
@@ -247,6 +276,15 @@ export function AudienciaManagement() {
       case "cancelada": return "bg-red-100 text-red-800";
       case "adiada": return "bg-yellow-100 text-yellow-800";
       default: return "bg-secondary text-secondary-foreground";
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "realizada": return <CheckCircle className="h-4 w-4" />;
+      case "cancelada": return <XCircle className="h-4 w-4" />;
+      case "adiada": return <AlertTriangle className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
     }
   };
 
@@ -419,40 +457,186 @@ export function AudienciaManagement() {
           />
         </div>
         
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" data-testid="button-filter-audiencias">
-              <Filter className="h-4 w-4 mr-2" />
-              {selectedFilter === "todos" ? "Todos" : selectedFilter}
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" data-testid="button-filter-audiencias">
+                <Filter className="h-4 w-4 mr-2" />
+                Status: {selectedFilter === "todos" ? "Todos" : selectedFilter}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setSelectedFilter("todos")}>
+                Todos
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedFilter("agendada")}>
+                Agendada
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedFilter("realizada")}>
+                Realizada
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedFilter("cancelada")}>
+                Cancelada
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedFilter("adiada")}>
+                Adiada
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <div className="flex border rounded-md">
+            <Button
+              variant={viewMode === "grid" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("grid")}
+              data-testid="button-grid-view"
+            >
+              <Grid className="h-4 w-4" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => setSelectedFilter("todos")}>
-              Todos
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSelectedFilter("agendada")}>
-              Agendada
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSelectedFilter("realizada")}>
-              Realizada
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSelectedFilter("cancelada")}>
-              Cancelada
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSelectedFilter("adiada")}>
-              Adiada
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+              data-testid="button-list-view"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Audiencias Table */}
-      <DataTable
-        columns={columns}
-        data={filteredAudiencias}
-        searchKey="processNumber"
-        searchPlaceholder="Pesquisar audiências..."
-      />
+      {/* Audiencias Display */}
+      {viewMode === "list" ? (
+        <DataTable
+          columns={columns}
+          data={filteredAudiencias}
+          searchKey="processNumber"
+          searchPlaceholder="Pesquisar audiências..."
+        />
+      ) : (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {paginatedAudiencias.map((audiencia) => (
+              <Card key={audiencia.id} className="hover-elevate" data-testid={`card-audiencia-${audiencia.id}`}>
+                <CardHeader className="pb-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calendar className="h-5 w-5 text-primary" />
+                        <CardTitle className="text-lg truncate">{audiencia.type}</CardTitle>
+                      </div>
+                      <p className="text-sm text-muted-foreground font-mono">
+                        Processo: {audiencia.processNumber}
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Badge className={getStatusColor(audiencia.status)}>
+                        {getStatusIcon(audiencia.status)}
+                        <span className="ml-1 capitalize">{audiencia.status}</span>
+                      </Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Cliente</p>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{audiencia.clientName}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Assunto</p>
+                      <span className="text-sm">{audiencia.processSubject}</span>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Data e Horário</p>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{formatDate(audiencia.date)} às {audiencia.time}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Juiz</p>
+                      <span className="text-sm font-medium">{audiencia.judge}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Local</p>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{audiencia.location}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {audiencia.observations && (
+                    <div className="space-y-2 pt-2 border-t border-border">
+                      <p className="text-xs text-muted-foreground">Observações</p>
+                      <p className="text-sm">{audiencia.observations}</p>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleViewAudiencia(audiencia)}
+                      data-testid={`button-view-audiencia-${audiencia.id}`}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Ver
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleEditAudiencia(audiencia)}
+                      data-testid={`button-edit-audiencia-${audiencia.id}`}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Editar
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => handleDeleteAudiencia(audiencia.id)}>
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Excluir
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          Ver Processo
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Pagination for Grid View */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            itemsPerPage={itemsPerPage}
+            totalItems={filteredAudiencias.length}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
+        </div>
+      )}
 
       {/* Modal de Edição */}
       {editingAudiencia && (

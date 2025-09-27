@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { DataTable } from "@/components/ui/data-table";
 import { ColumnDef } from "@tanstack/react-table";
+import { Pagination } from "@/components/Pagination";
 import { 
   Search, 
   Plus, 
@@ -13,7 +15,15 @@ import {
   Filter,
   FileText,
   MoreHorizontal,
-  Briefcase
+  Briefcase,
+  Calendar,
+  Clock,
+  User,
+  Grid,
+  List,
+  CheckCircle,
+  XCircle,
+  AlertTriangle
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -51,6 +61,9 @@ export function CasosManagement() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("todos");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const [showNewModal, setShowNewModal] = useState(false);
   const [newCaso, setNewCaso] = useState({
     caseNumber: "",
@@ -217,6 +230,24 @@ export function CasosManagement() {
     return matchesSearch && matchesFilter;
   });
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredCasos.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedCasos = filteredCasos.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (items: number) => {
+    setItemsPerPage(items);
+    setCurrentPage(1);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "aberto": return "bg-blue-100 text-blue-800";
@@ -224,6 +255,15 @@ export function CasosManagement() {
       case "concluido": return "bg-green-100 text-green-800";
       case "arquivado": return "bg-gray-100 text-gray-800";
       default: return "bg-secondary text-secondary-foreground";
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "concluido": return <CheckCircle className="h-4 w-4" />;
+      case "arquivado": return <XCircle className="h-4 w-4" />;
+      case "em_andamento": return <AlertTriangle className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
     }
   };
 
@@ -386,40 +426,173 @@ export function CasosManagement() {
           />
         </div>
         
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" data-testid="button-filter-casos">
-              <Filter className="h-4 w-4 mr-2" />
-              {selectedFilter === "todos" ? "Todos" : getStatusLabel(selectedFilter)}
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" data-testid="button-filter-casos">
+                <Filter className="h-4 w-4 mr-2" />
+                Status: {selectedFilter === "todos" ? "Todos" : getStatusLabel(selectedFilter)}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setSelectedFilter("todos")}>
+                Todos
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedFilter("aberto")}>
+                Aberto
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedFilter("em_andamento")}>
+                Em Andamento
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedFilter("concluido")}>
+                Concluído
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedFilter("arquivado")}>
+                Arquivado
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <div className="flex border rounded-md">
+            <Button
+              variant={viewMode === "grid" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("grid")}
+              data-testid="button-grid-view"
+            >
+              <Grid className="h-4 w-4" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => setSelectedFilter("todos")}>
-              Todos
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSelectedFilter("aberto")}>
-              Aberto
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSelectedFilter("em_andamento")}>
-              Em Andamento
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSelectedFilter("concluido")}>
-              Concluído
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSelectedFilter("arquivado")}>
-              Arquivado
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+              data-testid="button-list-view"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Casos Table */}
-      <DataTable
-        columns={columns}
-        data={filteredCasos}
-        searchKey="caseNumber"
-        searchPlaceholder="Pesquisar casos..."
-      />
+      {/* Casos Display */}
+      {viewMode === "list" ? (
+        <DataTable
+          columns={columns}
+          data={filteredCasos}
+          searchKey="caseNumber"
+          searchPlaceholder="Pesquisar casos..."
+        />
+      ) : (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {paginatedCasos.map((caso) => (
+              <Card key={caso.id} className="hover-elevate" data-testid={`card-caso-${caso.id}`}>
+                <CardHeader className="pb-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Briefcase className="h-5 w-5 text-primary" />
+                        <CardTitle className="text-lg truncate">{caso.title}</CardTitle>
+                      </div>
+                      <p className="text-sm text-muted-foreground font-mono">
+                        Caso: {caso.caseNumber}
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Badge className={getStatusColor(caso.status)}>
+                        {getStatusIcon(caso.status)}
+                        <span className="ml-1">{getStatusLabel(caso.status)}</span>
+                      </Badge>
+                      <Badge className={getPriorityColor(caso.priority)}>
+                        {caso.priority}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Cliente</p>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{caso.clientName}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Tipo de Caso</p>
+                      <Badge variant="outline" className={getStatusColor(caso.caseType)}>
+                        {caso.caseType}
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Advogado Responsável</p>
+                      <span className="text-sm font-medium">{caso.responsibleLawyer}</span>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">Data de Criação</p>
+                      <span className="text-sm">{formatDate(caso.createdAt)}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">Descrição</p>
+                    <p className="text-sm">{caso.description}</p>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                    <Link href={`/casos/${caso.id}/view`}>
+                      <Button variant="outline" size="sm" data-testid={`button-view-caso-${caso.id}`}>
+                        <Eye className="h-4 w-4 mr-1" />
+                        Ver
+                      </Button>
+                    </Link>
+                    <Link href={`/casos/${caso.id}/edit`}>
+                      <Button variant="outline" size="sm" data-testid={`button-edit-caso-${caso.id}`}>
+                        <Edit className="h-4 w-4 mr-1" />
+                        Editar
+                      </Button>
+                    </Link>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem>
+                          <FileText className="h-4 w-4 mr-2" />
+                          Documentos
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          Movimentações
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          Tarefas
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Pagination for Grid View */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            itemsPerPage={itemsPerPage}
+            totalItems={filteredCasos.length}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
+        </div>
+      )}
 
       {filteredCasos.length === 0 && (
         <div className="text-center py-12">
