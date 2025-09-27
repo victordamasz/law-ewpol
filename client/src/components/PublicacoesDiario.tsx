@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Pagination } from "@/components/Pagination";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   FileText, 
   Search, 
@@ -23,7 +24,9 @@ import {
   BookOpen,
   ExternalLink,
   CalendarPlus,
-  ListTodo
+  ListTodo,
+  Grid,
+  List
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -48,6 +51,7 @@ export function PublicacoesDiario() {
   const [selectedFilter, setSelectedFilter] = useState("todas");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   
   // Modal states
   const [showViewModal, setShowViewModal] = useState(false);
@@ -357,6 +361,25 @@ export function PublicacoesDiario() {
         </div>
         
         <div className="flex items-center gap-2">
+          <div className="flex items-center border rounded-lg p-1 bg-muted/50">
+            <Button
+              variant={viewMode === "cards" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("cards")}
+              data-testid="button-view-cards"
+            >
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "table" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+              data-testid="button-view-table"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" data-testid="button-filter-publications">
@@ -391,14 +414,15 @@ export function PublicacoesDiario() {
         </div>
       </div>
 
-      {/* Publications List */}
-      <div className="space-y-4">
-        {paginatedPublications.map((publication) => (
-          <Card 
-            key={publication.id} 
-            className="hover-elevate"
-            data-testid={`publication-card-${publication.id}`}
-          >
+      {/* Publications Display */}
+      {viewMode === "cards" ? (
+        <div className="space-y-4">
+          {paginatedPublications.map((publication) => (
+            <Card 
+              key={publication.id} 
+              className="hover-elevate"
+              data-testid={`publication-card-${publication.id}`}
+            >
             <CardContent className="p-6">
               <div className="space-y-4">
                 {/* Header com processo e data */}
@@ -515,9 +539,141 @@ export function PublicacoesDiario() {
                 </div>
               </div>
             </CardContent>
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[200px]">Processo</TableHead>
+                <TableHead>Cliente/Assunto</TableHead>
+                <TableHead className="w-[120px]">Tipo</TableHead>
+                <TableHead className="w-[120px]">Status</TableHead>
+                <TableHead className="w-[100px]">Prazo</TableHead>
+                <TableHead className="w-[100px]">Data</TableHead>
+                <TableHead className="w-[160px]">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedPublications.map((publication) => (
+                <TableRow 
+                  key={publication.id}
+                  data-testid={`publication-row-${publication.id}`}
+                  className="hover:bg-muted/50"
+                >
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Scale className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium text-sm truncate max-w-[180px]">
+                          {publication.processo.numero}
+                        </p>
+                        <div className="flex items-center gap-1 mt-1">
+                          {publication.advogados.slice(0, 2).map((advogado, index) => (
+                            <Avatar key={index} className="h-5 w-5">
+                              <AvatarImage src={advogado.avatar} alt={advogado.nome} />
+                              <AvatarFallback className="text-xs">
+                                {advogado.nome.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                              </AvatarFallback>
+                            </Avatar>
+                          ))}
+                          {publication.advogados.length > 2 && (
+                            <span className="text-xs text-muted-foreground ml-1">+{publication.advogados.length - 2}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell>
+                    <div>
+                      <p className="font-medium text-sm">{publication.processo.cliente}</p>
+                      <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                        {publication.processo.assunto}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {publication.publicacao.orgao}
+                      </p>
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell>
+                    <Badge className={getTipoColor(publication.publicacao.tipo)}>
+                      {publication.publicacao.tipo}
+                    </Badge>
+                  </TableCell>
+                  
+                  <TableCell>
+                    <Badge className={getStatusColor(publication.publicacao.status)}>
+                      {getStatusIcon(publication.publicacao.status)}
+                      <span className="ml-1 capitalize">{publication.publicacao.status}</span>
+                    </Badge>
+                  </TableCell>
+                  
+                  <TableCell>
+                    {publication.publicacao.prazo ? (
+                      <div className="text-xs">
+                        <Clock className="h-3 w-3 inline mr-1 text-orange-600" />
+                        <span className="font-medium text-orange-600">
+                          {publication.publicacao.prazo}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  
+                  <TableCell>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(publication.publicacao.data)}
+                    </span>
+                  </TableCell>
+                  
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="h-7 px-2"
+                        onClick={() => handleViewPublication(publication)}
+                        data-testid={`button-view-publication-${publication.id}`}
+                      >
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                      
+                      {publication.publicacao.prazo && (
+                        <>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="h-7 px-2"
+                            onClick={() => handleAddTask(publication)}
+                            data-testid={`button-add-task-${publication.id}`}
+                          >
+                            <ListTodo className="h-3 w-3" />
+                          </Button>
+                          
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="h-7 px-2"
+                            onClick={() => handleAddEvent(publication)}
+                            data-testid={`button-add-event-${publication.id}`}
+                          >
+                            <CalendarPlus className="h-3 w-3" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Pagination */}
       <Pagination

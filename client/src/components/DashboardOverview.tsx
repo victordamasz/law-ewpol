@@ -12,7 +12,13 @@ import {
   AlertTriangle,
   CheckCircle,
   Scale,
-  Gavel
+  Gavel,
+  BookOpen,
+  FolderOpen,
+  ClipboardList,
+  Receipt,
+  Bell,
+  Archive
 } from "lucide-react";
 
 export function DashboardOverview() {
@@ -23,7 +29,13 @@ export function DashboardOverview() {
     todayHearings: 5,
     monthlyRevenue: 85420.50,
     pendingTasks: 23,
-    completedTasks: 156
+    completedTasks: 156,
+    pendingPublications: 12,
+    inssRequests: 34,
+    activeContracts: 28,
+    recentDocuments: 15,
+    overdueTasks: 8,
+    totalDocuments: 342
   };
 
   const recentActivities = [
@@ -59,7 +71,7 @@ export function DashboardOverview() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
         <Card className="hover-elevate">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Clientes</CardTitle>
@@ -116,9 +128,90 @@ export function DashboardOverview() {
             </p>
           </CardContent>
         </Card>
+        
+        <Card className="hover-elevate">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Publicações Pendentes</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{mockStats.pendingPublications}</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="text-orange-600">3</span> com prazo hoje
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover-elevate">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pedidos INSS</CardTitle>
+            <ClipboardList className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{mockStats.inssRequests}</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="text-chart-2">+5</span> novos este mês
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Additional KPI Cards Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="hover-elevate">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Contratos Ativos</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{mockStats.activeContracts}</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="text-chart-3">R$ 45.2K</span> valor total
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover-elevate">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Documentos</CardTitle>
+            <Archive className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{mockStats.totalDocuments}</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="text-chart-2">{mockStats.recentDocuments}</span> criados recentemente
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover-elevate">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tarefas Vencidas</CardTitle>
+            <Bell className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">{mockStats.overdueTasks}</div>
+            <p className="text-xs text-muted-foreground">
+              Requer atenção imediata
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover-elevate">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Eficiência</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-chart-3">87%</div>
+            <p className="text-xs text-muted-foreground">
+              <span className="text-chart-3">+3%</span> vs mês anterior
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
         {/* Task Progress */}
         <Card className="hover-elevate">
           <CardHeader>
@@ -138,6 +231,12 @@ export function DashboardOverview() {
               <span className="text-sm text-muted-foreground">Pendentes</span>
               <Badge variant="secondary" className="bg-chart-2/10 text-chart-2">
                 {mockStats.pendingTasks}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Vencidas</span>
+              <Badge variant="secondary" className="bg-destructive/10 text-destructive">
+                {mockStats.overdueTasks}
               </Badge>
             </div>
             <Progress 
@@ -207,6 +306,87 @@ export function DashboardOverview() {
             >
               Ver todas as audiências
             </Button>
+          </CardContent>
+        </Card>
+        
+        {/* Publications Status */}
+        <Card className="hover-elevate">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Publicações Recentes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors">
+                <AlertTriangle className="h-4 w-4 text-orange-600 mt-1" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">Intimação - Processo 123456</p>
+                  <p className="text-xs text-muted-foreground">Prazo: 15 dias - Vence hoje</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors">
+                <CheckCircle className="h-4 w-4 text-chart-3 mt-1" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">Sentença Favorável - Silva vs Santos</p>
+                  <p className="text-xs text-muted-foreground">Publicada ontem</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors">
+                <Calendar className="h-4 w-4 text-primary mt-1" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">Citação - ABC Ltda</p>
+                  <p className="text-xs text-muted-foreground">Há 2 dias</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* INSS Requests Status */}
+        <Card className="hover-elevate">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ClipboardList className="h-5 w-5" />
+              Status INSS
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">Deferidos</span>
+                  <span className="text-muted-foreground">65%</span>
+                </div>
+                <Progress value={65} className="h-2" />
+                <div className="text-right text-xs text-muted-foreground">
+                  22 de 34 pedidos
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">Em Análise</span>
+                  <span className="text-muted-foreground">24%</span>
+                </div>
+                <Progress value={24} className="h-2" />
+                <div className="text-right text-xs text-muted-foreground">
+                  8 pedidos
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">Indeferidos</span>
+                  <span className="text-muted-foreground">11%</span>
+                </div>
+                <Progress value={11} className="h-2" />
+                <div className="text-right text-xs text-muted-foreground">
+                  4 pedidos
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -64,6 +64,7 @@ export function FinancialManagement() {
   const [showCashManagementModal, setShowCashManagementModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showReportsModal, setShowReportsModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   
   // Form states
@@ -96,6 +97,14 @@ export function FinancialManagement() {
     paymentMethod: "dinheiro",
     accountType: "caixa",
     date: new Date().toISOString().split('T')[0]
+  });
+
+  const [paymentData, setPaymentData] = useState({
+    paymentMethod: "dinheiro",
+    accountType: "caixa",
+    paymentDate: new Date().toISOString().split('T')[0],
+    notes: "",
+    generateCashEntry: true
   });
 
   // Dados estáticos expandidos para categorias e formas de pagamento
@@ -306,6 +315,27 @@ export function FinancialManagement() {
       paymentMethod: "dinheiro",
       accountType: "caixa",
       date: new Date().toISOString().split('T')[0]
+    });
+  };
+
+  const handleMarkAsPaid = () => {
+    if (!selectedTransaction) return;
+    
+    const paymentMethod = paymentMethods.find(m => m.value === paymentData.paymentMethod);
+    const accountType = accountTypes.find(a => a.value === paymentData.accountType);
+    
+    toast({
+      title: "Pagamento registrado!",
+      description: `${selectedTransaction.type === 'receber' ? 'Recebimento' : 'Pagamento'} de ${formatCurrency(selectedTransaction.amount)} registrado via ${paymentMethod?.label} em ${accountType?.label}.`,
+    });
+    
+    setShowPaymentModal(false);
+    setPaymentData({
+      paymentMethod: "dinheiro",
+      accountType: "caixa",
+      paymentDate: new Date().toISOString().split('T')[0],
+      notes: "",
+      generateCashEntry: true
     });
   };
 
@@ -622,7 +652,10 @@ export function FinancialManagement() {
                           size="sm" 
                           variant="default"
                           data-testid={`button-pay-transaction-${transaction.id}`}
-                          onClick={() => console.log(`Pay transaction ${transaction.id}`)}
+                          onClick={() => {
+                            setSelectedTransaction(transaction);
+                            setShowPaymentModal(true);
+                          }}
                         >
                           {transaction.type === 'receber' ? 'Marcar como Recebido' : 'Marcar como Pago'}
                         </Button>
@@ -707,7 +740,10 @@ export function FinancialManagement() {
                             variant="default"
                             className="flex-1"
                             data-testid={`button-pay-transaction-${transaction.id}`}
-                            onClick={() => console.log(`Pay transaction ${transaction.id}`)}
+                            onClick={() => {
+                              setSelectedTransaction(transaction);
+                              setShowPaymentModal(true);
+                            }}
                           >
                             {transaction.type === 'receber' ? 'Recebido' : 'Pago'}
                           </Button>
@@ -1222,6 +1258,109 @@ export function FinancialManagement() {
             </Button>
             <Button onClick={() => setShowReportsModal(false)}>
               Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Modal */}
+      <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedTransaction?.type === 'receber' ? 'Marcar como Recebido' : 'Marcar como Pago'}
+            </DialogTitle>
+            <DialogDescription>
+              Registre o {selectedTransaction?.type === 'receber' ? 'recebimento' : 'pagamento'} e faça o lançamento no caixa.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedTransaction && (
+            <div className="space-y-4">
+              <div className="p-3 bg-muted/50 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-medium text-sm">{selectedTransaction.description}</span>
+                  <Badge className={getTypeColor(selectedTransaction.type)}>
+                    {selectedTransaction.type === 'receber' ? 'Receita' : 'Despesa'}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mb-1">Cliente: {selectedTransaction.client}</p>
+                <p className="text-lg font-bold text-primary">
+                  {formatCurrency(selectedTransaction.amount)}
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Data do Pagamento</Label>
+                <Input
+                  type="date"
+                  value={paymentData.paymentDate}
+                  onChange={(e) => setPaymentData({...paymentData, paymentDate: e.target.value})}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Forma de Pagamento</Label>
+                <Select value={paymentData.paymentMethod} onValueChange={(value) => setPaymentData({...paymentData, paymentMethod: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method.value} value={method.value}>
+                        {method.icon} {method.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Conta/Caixa</Label>
+                <Select value={paymentData.accountType} onValueChange={(value) => setPaymentData({...paymentData, accountType: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accountTypes.map((account) => (
+                      <SelectItem key={account.value} value={account.value}>
+                        {account.icon} {account.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Observações (opcional)</Label>
+                <Textarea
+                  value={paymentData.notes}
+                  onChange={(e) => setPaymentData({...paymentData, notes: e.target.value})}
+                  placeholder="Adicione observações sobre este pagamento..."
+                  className="min-h-20"
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="generateCashEntry"
+                  checked={paymentData.generateCashEntry}
+                  onChange={(e) => setPaymentData({...paymentData, generateCashEntry: e.target.checked})}
+                  className="rounded"
+                />
+                <Label htmlFor="generateCashEntry" className="text-sm">
+                  Gerar lançamento automático no fluxo de caixa
+                </Label>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPaymentModal(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleMarkAsPaid} data-testid="button-confirm-payment">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              {selectedTransaction?.type === 'receber' ? 'Confirmar Recebimento' : 'Confirmar Pagamento'}
             </Button>
           </DialogFooter>
         </DialogContent>
