@@ -7,6 +7,15 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  fullName: text("full_name").notNull(),
+  email: text("email").unique(),
+  avatarUrl: text("avatar_url"),
+  role: text("role").notNull().default("lawyer"), // admin, lawyer, paralegal, intern
+  phone: text("phone"),
+  department: text("department"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const clients = pgTable("clients", {
@@ -135,15 +144,55 @@ export const clientTasks = pgTable("client_tasks", {
   status: text("status").notNull().default("pendente"), // pendente, em_andamento, concluida, cancelada
   dueDate: timestamp("due_date"),
   completedDate: timestamp("completed_date"),
-  assignedTo: text("assigned_to"),
+  assignedTo: varchar("assigned_to").references(() => users.id), // responsável principal
+  reviewerId: varchar("reviewer_id").references(() => users.id), // revisor
+  createdBy: varchar("created_by").references(() => users.id),
+  category: text("category"), // categoria da tarefa
+  estimatedHours: decimal("estimated_hours", { precision: 5, scale: 2 }),
+  actualHours: decimal("actual_hours", { precision: 5, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Participantes de tarefas
+export const taskParticipants = pgTable("task_participants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  taskId: varchar("task_id").notNull().references(() => clientTasks.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: text("role").notNull().default("participant"), // participant, observer, approver
+  addedAt: timestamp("added_at").defaultNow(),
+});
+
+// Comentários de tarefas
+export const taskComments = pgTable("task_comments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  taskId: varchar("task_id").notNull().references(() => clientTasks.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  isInternal: boolean("is_internal").default(false), // comentário interno ou visível ao cliente
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Participantes de eventos da agenda
+export const scheduleParticipants = pgTable("schedule_participants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  scheduleId: varchar("schedule_id").notNull().references(() => clientSchedule.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+  clientId: varchar("client_id").references(() => clients.id, { onDelete: "cascade" }),
+  name: text("name"), // nome se não for usuário do sistema
+  email: text("email"),
+  phone: text("phone"),
+  role: text("role").notNull().default("participant"), // organizer, participant, required, optional
+  responseStatus: text("response_status").default("pending"), // pending, accepted, declined, tentative
+  addedAt: timestamp("added_at").defaultNow(),
+});
+
 // Schemas for validation
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertClientSchema = createInsertSchema(clients).omit({
@@ -194,6 +243,22 @@ export const insertClientTaskSchema = createInsertSchema(clientTasks).omit({
   updatedAt: true,
 });
 
+export const insertTaskParticipantSchema = createInsertSchema(taskParticipants).omit({
+  id: true,
+  addedAt: true,
+});
+
+export const insertTaskCommentSchema = createInsertSchema(taskComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertScheduleParticipantSchema = createInsertSchema(scheduleParticipants).omit({
+  id: true,
+  addedAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -221,3 +286,12 @@ export type InsertClientSchedule = z.infer<typeof insertClientScheduleSchema>;
 
 export type ClientTask = typeof clientTasks.$inferSelect;
 export type InsertClientTask = z.infer<typeof insertClientTaskSchema>;
+
+export type TaskParticipant = typeof taskParticipants.$inferSelect;
+export type InsertTaskParticipant = z.infer<typeof insertTaskParticipantSchema>;
+
+export type TaskComment = typeof taskComments.$inferSelect;
+export type InsertTaskComment = z.infer<typeof insertTaskCommentSchema>;
+
+export type ScheduleParticipant = typeof scheduleParticipants.$inferSelect;
+export type InsertScheduleParticipant = z.infer<typeof insertScheduleParticipantSchema>;
