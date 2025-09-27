@@ -26,7 +26,12 @@ import {
   Download,
   FileBarChart,
   Wallet,
-  X
+  X,
+  Edit,
+  CreditCard,
+  Banknote,
+  PiggyBank,
+  Settings
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -55,6 +60,7 @@ export function FinancialManagement() {
   
   // Modal states
   const [showNewTransactionModal, setShowNewTransactionModal] = useState(false);
+  const [showEditTransactionModal, setShowEditTransactionModal] = useState(false);
   const [showCashManagementModal, setShowCashManagementModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showReportsModal, setShowReportsModal] = useState(false);
@@ -71,13 +77,56 @@ export function FinancialManagement() {
     notes: ""
   });
   
+  const [editTransaction, setEditTransaction] = useState({
+    id: "",
+    type: "receber",
+    description: "",
+    client: "",
+    amount: "",
+    dueDate: "",
+    category: "Honorários",
+    notes: ""
+  });
+
   const [cashMovement, setCashMovement] = useState({
     type: "entrada",
     amount: "",
     description: "",
     category: "Operacional",
+    paymentMethod: "dinheiro",
+    accountType: "caixa",
     date: new Date().toISOString().split('T')[0]
   });
+
+  // Dados estáticos expandidos para categorias e formas de pagamento
+  const categories = [
+    { value: "Honorários", label: "Honorários", icon: "💰" },
+    { value: "Consultoria", label: "Consultoria", icon: "🗣️" },
+    { value: "Acordos", label: "Acordos", icon: "🤝" },
+    { value: "Infraestrutura", label: "Infraestrutura", icon: "🏢" },
+    { value: "Software", label: "Software", icon: "💻" },
+    { value: "Marketing", label: "Marketing", icon: "📈" },
+    { value: "Tributário", label: "Tributário", icon: "📋" },
+    { value: "Pessoal", label: "Pessoal", icon: "👥" },
+    { value: "Operacional", label: "Operacional", icon: "⚙️" }
+  ];
+
+  const paymentMethods = [
+    { value: "dinheiro", label: "Dinheiro", icon: "💵" },
+    { value: "pix", label: "PIX", icon: "📱" },
+    { value: "cartao_credito", label: "Cartão de Crédito", icon: "💳" },
+    { value: "cartao_debito", label: "Cartão de Débito", icon: "💳" },
+    { value: "transferencia", label: "Transferência", icon: "🏦" },
+    { value: "boleto", label: "Boleto", icon: "📄" },
+    { value: "cheque", label: "Cheque", icon: "📝" }
+  ];
+
+  const accountTypes = [
+    { value: "caixa", label: "Caixa", icon: "🏪" },
+    { value: "conta_corrente", label: "Conta Corrente", icon: "🏦" },
+    { value: "conta_poupanca", label: "Conta Poupança", icon: "💰" },
+    { value: "investimento", label: "Investimento", icon: "📈" }
+  ];
 
   // Todo: remove mock functionality
   const financialSummary = {
@@ -241,9 +290,12 @@ export function FinancialManagement() {
   };
   
   const handleCashMovement = () => {
+    const method = paymentMethods.find(m => m.value === cashMovement.paymentMethod);
+    const account = accountTypes.find(a => a.value === cashMovement.accountType);
+    
     toast({
       title: "Movimentação registrada!",
-      description: `${cashMovement.type === 'entrada' ? 'Entrada' : 'Saída'} de ${formatCurrency(parseFloat(cashMovement.amount))} registrada no caixa.`,
+      description: `${cashMovement.type === 'entrada' ? 'Entrada' : 'Saída'} de ${formatCurrency(parseFloat(cashMovement.amount))} via ${method?.label} em ${account?.label}.`,
     });
     setShowCashManagementModal(false);
     setCashMovement({
@@ -251,7 +303,41 @@ export function FinancialManagement() {
       amount: "",
       description: "",
       category: "Operacional",
+      paymentMethod: "dinheiro",
+      accountType: "caixa",
       date: new Date().toISOString().split('T')[0]
+    });
+  };
+
+  const handleEditTransaction = (transaction: any) => {
+    setEditTransaction({
+      id: transaction.id,
+      type: transaction.type,
+      description: transaction.description,
+      client: transaction.client,
+      amount: transaction.amount.toString(),
+      dueDate: transaction.dueDate,
+      category: transaction.category,
+      notes: ""
+    });
+    setShowEditTransactionModal(true);
+  };
+
+  const handleUpdateTransaction = () => {
+    toast({
+      title: "Transação atualizada!",
+      description: `${editTransaction.type === 'receber' ? 'Receita' : 'Despesa'} de ${formatCurrency(parseFloat(editTransaction.amount))} atualizada com sucesso.`,
+    });
+    setShowEditTransactionModal(false);
+    setEditTransaction({
+      id: "",
+      type: "receber",
+      description: "",
+      client: "",
+      amount: "",
+      dueDate: "",
+      category: "Honorários",
+      notes: ""
     });
   };
   
@@ -529,26 +615,45 @@ export function FinancialManagement() {
                     </div>
                   </div>
 
-                  {transaction.status !== 'pago' && (
-                    <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-                      <Button 
-                        size="sm" 
-                        variant="default"
-                        data-testid={`button-pay-transaction-${transaction.id}`}
-                        onClick={() => console.log(`Pay transaction ${transaction.id}`)}
-                      >
-                        {transaction.type === 'receber' ? 'Marcar como Recebido' : 'Marcar como Pago'}
-                      </Button>
+                  <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                    {transaction.status !== 'pago' && (
+                      <>
+                        <Button 
+                          size="sm" 
+                          variant="default"
+                          data-testid={`button-pay-transaction-${transaction.id}`}
+                          onClick={() => console.log(`Pay transaction ${transaction.id}`)}
+                        >
+                          {transaction.type === 'receber' ? 'Marcar como Recebido' : 'Marcar como Pago'}
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          data-testid={`button-edit-transaction-${transaction.id}`}
+                          onClick={() => handleEditTransaction(transaction)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
+                      </>
+                    )}
+                    
+                    {transaction.status === 'pago' && (
                       <Button 
                         size="sm" 
                         variant="outline"
-                        data-testid={`button-edit-transaction-${transaction.id}`}
-                        onClick={() => console.log(`Edit transaction ${transaction.id}`)}
+                        data-testid={`button-receipt-transaction-${transaction.id}`}
+                        onClick={() => {
+                          setSelectedTransaction(transaction);
+                          setShowReceiptModal(true);
+                        }}
                       >
-                        Editar
+                        <Receipt className="h-4 w-4 mr-1" />
+                        Gerar Recibo
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
+
                 </CardContent>
               </Card>
               ))}
@@ -731,11 +836,11 @@ export function FinancialManagement() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Honorários">Honorários</SelectItem>
-                  <SelectItem value="Consultoria">Consultoria</SelectItem>
-                  <SelectItem value="Acordos">Acordos</SelectItem>
-                  <SelectItem value="Infraestrutura">Infraestrutura</SelectItem>
-                  <SelectItem value="Software">Software</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.icon} {cat.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -801,10 +906,11 @@ export function FinancialManagement() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Operacional">Operacional</SelectItem>
-                    <SelectItem value="Investimento">Investimento</SelectItem>
-                    <SelectItem value="Financiamento">Financiamento</SelectItem>
-                    <SelectItem value="Tributário">Tributário</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        {cat.icon} {cat.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -818,6 +924,39 @@ export function FinancialManagement() {
                 />
               </div>
             </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="paymentMethod">Forma de Pagamento</Label>
+                <Select value={cashMovement.paymentMethod} onValueChange={(value) => setCashMovement({...cashMovement, paymentMethod: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((method) => (
+                      <SelectItem key={method.value} value={method.value}>
+                        {method.icon} {method.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="accountType">Conta/Origem</Label>
+                <Select value={cashMovement.accountType} onValueChange={(value) => setCashMovement({...cashMovement, accountType: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accountTypes.map((account) => (
+                      <SelectItem key={account.value} value={account.value}>
+                        {account.icon} {account.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCashManagementModal(false)}>
@@ -825,6 +964,110 @@ export function FinancialManagement() {
             </Button>
             <Button onClick={handleCashMovement} data-testid="button-register-cash">
               Registrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Transaction Modal */}
+      <Dialog open={showEditTransactionModal} onOpenChange={setShowEditTransactionModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Transação</DialogTitle>
+            <DialogDescription>
+              Atualize os dados da transação selecionada.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="editType">Tipo de Transação</Label>
+              <Select value={editTransaction.type} onValueChange={(value) => setEditTransaction({...editTransaction, type: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="receber">A Receber</SelectItem>
+                  <SelectItem value="pagar">A Pagar</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editDescription">Descrição</Label>
+              <Input
+                id="editDescription"
+                value={editTransaction.description}
+                onChange={(e) => setEditTransaction({...editTransaction, description: e.target.value})}
+                placeholder="Descrição da transação"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="editAmount">Valor</Label>
+                <Input
+                  id="editAmount"
+                  type="number"
+                  value={editTransaction.amount}
+                  onChange={(e) => setEditTransaction({...editTransaction, amount: e.target.value})}
+                  placeholder="0,00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editDueDate">Data de Vencimento</Label>
+                <Input
+                  id="editDueDate"
+                  type="date"
+                  value={editTransaction.dueDate}
+                  onChange={(e) => setEditTransaction({...editTransaction, dueDate: e.target.value})}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editClient">Cliente</Label>
+              <Select value={editTransaction.client} onValueChange={(value) => setEditTransaction({...editTransaction, client: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Maria Silva">Maria Silva</SelectItem>
+                  <SelectItem value="João Costa">João Costa</SelectItem>
+                  <SelectItem value="Ana Ferreira">Ana Ferreira</SelectItem>
+                  <SelectItem value="Carlos Lima">Carlos Lima</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editCategory">Categoria</Label>
+              <Select value={editTransaction.category} onValueChange={(value) => setEditTransaction({...editTransaction, category: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.icon} {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editNotes">Observações</Label>
+              <Textarea
+                id="editNotes"
+                value={editTransaction.notes}
+                onChange={(e) => setEditTransaction({...editTransaction, notes: e.target.value})}
+                placeholder="Observações adicionais..."
+                className="min-h-20"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditTransactionModal(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdateTransaction} data-testid="button-update-transaction">
+              <Edit className="h-4 w-4 mr-2" />
+              Atualizar Transação
             </Button>
           </DialogFooter>
         </DialogContent>

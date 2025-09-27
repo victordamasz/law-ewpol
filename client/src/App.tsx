@@ -19,6 +19,7 @@ import { ContratosHonorariosManagement } from "@/components/ContratosHonorariosM
 import { ProcuracoesManagement } from "@/components/ProcuracoesManagement";
 import { FinancialManagement } from "@/components/FinancialManagement";
 import { FileManager } from "@/components/FileManager";
+import { PublicacoesDiario } from "@/components/PublicacoesDiario";
 import { Settings } from "@/components/Settings";
 import { Login } from "@/components/Login";
 import { UserModule } from "@/components/UserModule";
@@ -73,6 +74,9 @@ function Router() {
       <Route path="/documentos" component={DocumentManagement} />
       <Route path="/documents/new" component={DocumentEditorPage} />
       <Route path="/documents/:id/edit" component={DocumentEditorPage} />
+      
+      {/* Publications route */}
+      <Route path="/publicacoes-diario" component={PublicacoesDiario} />
       
       {/* Sub-modules */}
       <Route path="/contratos-honorarios" component={ContratosHonorariosManagement} />

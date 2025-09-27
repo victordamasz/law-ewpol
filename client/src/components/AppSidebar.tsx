@@ -36,7 +36,8 @@ import {
   LogOut,
   Gavel,
   Clock,
-  UserPlus
+  UserPlus,
+  BookOpen
 } from "lucide-react";
 
 const mainMenuItems = [
@@ -90,6 +91,12 @@ const legalMenuItems = [
     url: "/casos",
     icon: Briefcase,
     badge: "15",
+  },
+  {
+    title: "Publicações no Diário",
+    url: "/publicacoes-diario",
+    icon: BookOpen,
+    badge: "5",
   },
 ];
 
