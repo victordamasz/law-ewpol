@@ -11,7 +11,12 @@ import { ClientManagement } from "@/components/ClientManagement";
 import { CalendarView } from "@/components/CalendarView";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { ProcessManagement } from "@/components/ProcessManagement";
-import { DocumentGenerator } from "@/components/DocumentGenerator";
+import { AudienciaManagement } from "@/components/AudienciaManagement";
+import { PedidosInssManagement } from "@/components/PedidosInssManagement";
+import { CasosManagement } from "@/components/CasosManagement";
+import { DocumentManagement } from "@/components/DocumentManagement";
+import { ContratosHonorariosManagement } from "@/components/ContratosHonorariosManagement";
+import { ProcuracoesManagement } from "@/components/ProcuracoesManagement";
 import { FinancialManagement } from "@/components/FinancialManagement";
 import { FileManager } from "@/components/FileManager";
 import { Settings } from "@/components/Settings";
@@ -20,6 +25,13 @@ import { UserModule } from "@/components/UserModule";
 import { ClientCreatePage } from "@/pages/ClientCreatePage";
 import { ClientEditPage } from "@/pages/ClientEditPage";
 import { ClientViewPage } from "@/pages/ClientViewPage";
+import { ProcessEditPage } from "@/pages/ProcessEditPage";
+import { ProcessViewPage } from "@/pages/ProcessViewPage";
+import { PedidoInssEditPage } from "@/pages/PedidoInssEditPage";
+import { PedidoInssViewPage } from "@/pages/PedidoInssViewPage";
+import { CasoEditPage } from "@/pages/CasoEditPage";
+import { CasoViewPage } from "@/pages/CasoViewPage";
+import { DocumentEditorPage } from "@/pages/DocumentEditorPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -39,11 +51,32 @@ function Router() {
       
       <Route path="/agenda" component={CalendarView} />
       <Route path="/tarefas" component={KanbanBoard} />
+      {/* Process routes */}
       <Route path="/processos" component={ProcessManagement} />
-      <Route path="/audiencias" component={ProcessManagement} />
-      <Route path="/inss" component={ProcessManagement} />
-      <Route path="/casos" component={ProcessManagement} />
-      <Route path="/documentos" component={DocumentGenerator} />
+      <Route path="/processos/:id/edit" component={ProcessEditPage} />
+      <Route path="/processos/:id/view" component={ProcessViewPage} />
+      
+      {/* Hearing routes */}
+      <Route path="/audiencias" component={AudienciaManagement} />
+      
+      {/* INSS routes */}
+      <Route path="/inss" component={PedidosInssManagement} />
+      <Route path="/inss/:id/edit" component={PedidoInssEditPage} />
+      <Route path="/inss/:id/view" component={PedidoInssViewPage} />
+      
+      {/* Legal Cases routes */}
+      <Route path="/casos" component={CasosManagement} />
+      <Route path="/casos/:id/edit" component={CasoEditPage} />
+      <Route path="/casos/:id/view" component={CasoViewPage} />
+      
+      {/* Document routes */}
+      <Route path="/documentos" component={DocumentManagement} />
+      <Route path="/documents/new" component={DocumentEditorPage} />
+      <Route path="/documents/:id/edit" component={DocumentEditorPage} />
+      
+      {/* Sub-modules */}
+      <Route path="/contratos-honorarios" component={ContratosHonorariosManagement} />
+      <Route path="/procuracoes" component={ProcuracoesManagement} />
       <Route path="/financeiro" component={FinancialManagement} />
       <Route path="/arquivos" component={FileManager} />
       <Route path="/usuarios" component={UserModule} />
