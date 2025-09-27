@@ -23,6 +23,7 @@ import { PublicacoesDiario } from "@/components/PublicacoesDiario";
 import { Settings } from "@/components/Settings";
 import { Login } from "@/components/Login";
 import { UserModule } from "@/components/UserModule";
+import { ChatModule } from "@/components/ChatModule";
 import { ClientCreatePage } from "@/pages/ClientCreatePage";
 import { ClientEditPage } from "@/pages/ClientEditPage";
 import { ClientViewPage } from "@/pages/ClientViewPage";
@@ -83,6 +84,7 @@ function Router() {
       <Route path="/procuracoes" component={ProcuracoesManagement} />
       <Route path="/financeiro" component={FinancialManagement} />
       <Route path="/arquivos" component={FileManager} />
+      <Route path="/chat" component={ChatModule} />
       <Route path="/usuarios" component={UserModule} />
       <Route path="/configuracoes" component={Settings} />
       <Route component={NotFound} />

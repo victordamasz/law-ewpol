@@ -1,4 +1,5 @@
 import React from "react";
+import { Link, useLocation } from "wouter";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +18,22 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Bell, User, Settings, LogOut, Shield, HelpCircle } from "lucide-react";
+import { 
+  Bell, 
+  User, 
+  Settings, 
+  LogOut, 
+  Shield, 
+  HelpCircle,
+  LayoutDashboard,
+  Users,
+  MessageCircle,
+  Calendar,
+  Scale,
+  FileText,
+  DollarSign,
+  FolderOpen
+} from "lucide-react";
 
 const notifications = [
   {
@@ -50,18 +66,40 @@ const notifications = [
   }
 ];
 
+// Horizontal navigation menu items
+const navMenuItems = [
+  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Clientes", url: "/clientes", icon: Users },
+  { title: "Chat", url: "/chat", icon: MessageCircle },
+  { title: "Agenda", url: "/agenda", icon: Calendar },
+  { title: "Processos", url: "/processos", icon: Scale },
+  { title: "Documentos", url: "/documentos", icon: FileText },
+  { title: "Financeiro", url: "/financeiro", icon: DollarSign },
+  { title: "Arquivos", url: "/arquivos", icon: FolderOpen },
+];
+
 export function TopBar() {
+  const [location] = useLocation();
   const unreadCount = notifications.filter(n => n.unread).length;
 
   const handleLogout = () => {
     console.log('Logout realizado');
   };
 
+  const isActive = (url: string) => {
+    return location === url || (url !== "/" && location.startsWith(url));
+  };
+
   return (
-    <header className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <SidebarTrigger data-testid="button-sidebar-toggle" />
-      
-      <div className="flex items-center gap-3">
+    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      {/* Top section with sidebar toggle and user controls */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger data-testid="button-sidebar-toggle" />
+          <div className="text-lg font-semibold text-foreground">Sistema Jurídico</div>
+        </div>
+        
+        <div className="flex items-center gap-3">
         {/* Menu de Notificações */}
         <Popover>
           <PopoverTrigger asChild>
@@ -165,7 +203,30 @@ export function TopBar() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <ThemeToggle />
+          <ThemeToggle />
+        </div>
+      </div>
+
+      {/* Horizontal Navigation Menu */}
+      <div className="border-t bg-muted/30">
+        <nav className="px-2 md:px-4">
+          <div className="flex items-center space-x-1 overflow-x-auto py-2 scrollbar-hide">
+            {navMenuItems.map((item) => (
+              <Link key={item.url} href={item.url}>
+                <Button
+                  variant={isActive(item.url) ? "default" : "ghost"}
+                  size="sm"
+                  className="whitespace-nowrap flex-shrink-0 text-xs md:text-sm"
+                  data-testid={`nav-${item.title.toLowerCase()}`}
+                >
+                  <item.icon className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+                  <span className="hidden sm:inline">{item.title}</span>
+                  <span className="sm:hidden">{item.title.slice(0, 4)}</span>
+                </Button>
+              </Link>
+            ))}
+          </div>
+        </nav>
       </div>
     </header>
   );

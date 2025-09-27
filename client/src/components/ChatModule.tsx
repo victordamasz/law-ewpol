@@ -310,9 +310,9 @@ export function ChatModule() {
   };
 
   return (
-    <div className="h-[calc(100vh-2rem)] flex gap-4 p-4">
+    <div className="h-[calc(100vh-2rem)] flex flex-col lg:flex-row gap-2 lg:gap-4 p-2 lg:p-4">
       {/* Conversas Sidebar */}
-      <div className="w-80 flex flex-col bg-background rounded-lg border">
+      <div className="w-full lg:w-80 flex flex-col bg-background rounded-lg border max-h-96 lg:max-h-none">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">

@@ -326,4 +326,33 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+
+  /* Responsive utility classes */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar { 
+    display: none;  /* Safari and Chrome */
+  }
+
+  /* Prevent horizontal scroll globally */
+  body, html {
+    overflow-x: hidden;
+  }
+
+  /* Mobile responsiveness utilities */
+  @media (max-width: 768px) {
+    .mobile-stack {
+      flex-direction: column !important;
+    }
+    
+    .mobile-full-width {
+      width: 100% !important;
+    }
+    
+    .mobile-hidden {
+      display: none !important;
+    }
+  }
 }

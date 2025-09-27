@@ -37,7 +37,8 @@ import {
   Gavel,
   Clock,
   UserPlus,
-  BookOpen
+  BookOpen,
+  MessageCircle
 } from "lucide-react";
 
 const mainMenuItems = [
@@ -52,6 +53,12 @@ const mainMenuItems = [
     url: "/clientes",
     icon: Users,
     badge: "12",
+  },
+  {
+    title: "Chat",
+    url: "/chat",
+    icon: MessageCircle,
+    badge: "4",
   },
   {
     title: "Agenda",
